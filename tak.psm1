@@ -267,7 +267,7 @@ function Test-LyncDNS {
     $aRecords += $srvRecords | Where-Object {$PSItem -is [Microsoft.DnsClient.Commands.DnsRecord_A]} 
     
     $srvRecords | Where-Object {$PSItem -is [Microsoft.DnsClient.Commands.DnsRecord_SRV]}
-    $aRecords | Where-Object {$PSItem.IpAddress -ne $rootRecord.IP4Address -and $PSItem.Section -eq "Answer" -and $PSItem.}
+    $aRecords | Where-Object {$PSItem.IpAddress -ne $rootRecord.IP4Address -and $PSItem.Section -eq "Answer"}
 
     if($testConnection) {
         $aRecords | foreach {
