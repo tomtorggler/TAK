@@ -16,11 +16,9 @@ function Test-TLSConnection {
        Test-TlsConnection -ComputerName sipdir.online.lync.com -Port 5061 -SaveCert 
        This example connects to sipdir.online.lync.com on port 5061 and saves the certificate to the temp folder.
     #>
-    [CmdletBinding(SupportsShouldProcess=$true, 
-                  PositionalBinding=$false,
-                  HelpUri = 'http://www.ntsystems.it/')]
+    [CmdletBinding(HelpUri = 'http://www.ntsystems.it/')]
     [Alias('ttls')]
-    [OutputType([psobject])]
+    [OutputType([psobject],[bool])]
     param (
         [Parameter(Mandatory=$true, 
                     Position=0)]
@@ -122,9 +120,7 @@ function Test-TCPConnection {
        Test-TcpConnection -ComputerName www.ntsystems.it -Port 25 -Count 4
        This example tests for 4 times if port 25 can be reached on www.ntsystems.it
     #>
-    [CmdletBinding(SupportsShouldProcess=$true, 
-                  PositionalBinding=$false,
-                  HelpUri = 'http://www.ntsystems.it/')]
+    [CmdletBinding(HelpUri = 'http://www.ntsystems.it/')]
     [Alias('ttcp')]
     [OutputType([bool])]
     param (
@@ -152,7 +148,9 @@ function Test-TCPConnection {
         $TCPConnection = New-Object System.Net.Sockets.Tcpclient
         Try { 
             $TCPConnection.Connect($ComputerName, $Port) 
-        } Catch {}
+        } Catch {
+            Write-Verbose "Error connecting to $ComputerName on $Port : $_"
+        }
 
         If ($?) {
             Write-Output $True
@@ -270,11 +268,11 @@ function Test-LyncDNS {
     $aRecords | Where-Object {$PSItem.IpAddress -ne $rootRecord.IP4Address -and $PSItem.Section -eq "Answer"}
 
     if($testConnection) {
-        $aRecords | foreach {
+        $aRecords | ForEach-Object {
             Write-Verbose "Testing TLS connection for $($_.Name)"
             Test-TLSConnection -ComputerName $_.Name -Silent
         }
-        $srvRecords | foreach {
+        $srvRecords | ForEach-Object {
             Write-Verbose "Testing TLS connection for $($_.Name):$($_.Port)"
             Test-TLSConnection -ComputerName $_.NameTarget -Port $_.Port -Silent
         }
@@ -409,7 +407,7 @@ function Connect-Exchange
             ConnectionUri = "http://$Server/PowerShell/"
         }
     } else {
-        Write-Host "Already connected to Exchange"
+        Write-Warning "Already connected to Exchange"
         break
     }
     try {
@@ -449,7 +447,7 @@ function Connect-Lync
             ConnectionUri = "http://$Server/ocsPowerShell/"
         }
     } else {
-        Write-Host "Already connected to Lync"
+        Write-Warning "Already connected to Lync"
         break
     }
     try {
