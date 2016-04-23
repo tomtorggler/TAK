@@ -1,5 +1,4 @@
 ﻿$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$here
 Import-Module "$here\tak.psd1"
 
 Describe "Test Converters" {
@@ -15,13 +14,12 @@ Describe "Test Converters" {
     }
     Context "Testing SID" {
         It "ConvertTo-SID" {
-            $sid = ConvertTo-SID -SamAccountName 'Administrator'
-            $sid | Should match 'S-1-5-\d{2}-\d{10}-\d{10}-\d{10}-500'
+            $sid = ConvertTo-SID -SamAccountName 'BUILTIN\Administrators'
+            $sid | Should be 'S-1-5-32-544'
         }
         It "ConvertFrom-SID" {
-            $sid = ConvertTo-SID -SamAccountName 'Administrator'
-            $username = ConvertFrom-SID -SID $sid
-            $username | Should match 'Administrator'
+            $username = ConvertFrom-SID -SID 'S-1-5-32-544'
+            $username | Should be 'BUILTIN\Administrators'
         }
     }
 }
