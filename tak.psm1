@@ -1,8 +1,26 @@
-﻿
-function Test-TLSConnection  {
+﻿#region Test Connection
+function Test-TLSConnection {
+    <#
+    .Synopsis
+       Test if TLS Connection can be established.
+    .DESCRIPTION
+       This function uses System.Net.Sockets.Tcpclient and System.Net.Security.SslStream to connect to a ComputerName and 
+       authenticate via TLS. This is useful to check if a TLS connection can be established and if the certificate used on 
+       the remote computer is trusted on the local machine.
+       If the connection can be established, the certificate's properties will be output as custom object.
+       Optionally the certificate can be downloaded using the -SaveCert switch.
+    .EXAMPLE
+       Test-TlsConnection -ComputerName www.ntsystems.it
+       This example connects to www.ntsystems.it on port 443 (default) and outputs the certificate's properties.
+    .EXAMPLE
+       Test-TlsConnection -ComputerName sipdir.online.lync.com -Port 5061 -SaveCert 
+       This example connects to sipdir.online.lync.com on port 5061 and saves the certificate to the temp folder.
+    #>
     [CmdletBinding(SupportsShouldProcess=$true, 
                   PositionalBinding=$false,
                   HelpUri = 'http://www.ntsystems.it/')]
+    [Alias('ttls')]
+    [OutputType([psobject])]
     param (
         [Parameter(Mandatory=$true, 
                     Position=0)]
@@ -19,18 +37,16 @@ function Test-TLSConnection  {
         [ValidateRange(1,65535)]
         $Port = '443',
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory=$false, 
+                    Position=2)]
+        [System.IO.FileInfo]
+        $FilePath = "$env:TEMP\$computername.cer",
+        
         [switch]
         $SaveCert,
 
         [switch]
-        $Silent,
-        
-        [Parameter(Mandatory=$false, 
-                    Position=2)]
-        [System.IO.FileInfo]
-        $FilePath = "$env:TEMP\$computername.cer"
-            
+        $Silent
     )
 
     try {
@@ -68,17 +84,14 @@ function Test-TLSConnection  {
             }
 
             if($Silent) {
-                return $true
+                Write-Output $true
             } else {
                 Write-Output (New-Object -TypeName PSObject -Property $Data)
             }
 
             if ($SaveCert) {
-                
                 Write-Host "Saving cert to $FilePath" -ForegroundColor Yellow
-                
                 [system.io.file]::WriteAllBytes($FilePath,$certificateX509.Export("cer"))
-
             }
 
         } catch {
@@ -91,17 +104,28 @@ function Test-TLSConnection  {
         $errorcode = $exception.ErrorCode
 
         Write-Warning "TCP connection to $ComputerName with IP $(([net.dns]::GetHostByName($ComputerName)).addresslist.ipaddresstostring) failed, error code:$errorcode"
-        Write-Warning "Error details: $exception" 
-        
+        Write-Warning "Error details: $exception"    
     }
+}
 
-} # end function test-tlsconnection
-
-
-function Test-TCPConnection  {
+function Test-TCPConnection {
+    <#
+    .Synopsis
+       Test if a TCP Connection can be established.
+    .DESCRIPTION
+       This function uses System.Net.Sockets.Tcpclient to test if a TCP connection can be established with a 
+       ComputerName on a given port. Much like "telnet" which is not installed by default.
+    .EXAMPLE
+       Test-TcpConnection -ComputerName www.ntsystems.it
+       This example tests if port 80 can be reached on www.ntsystems.it
+    .EXAMPLE
+       Test-TcpConnection -ComputerName www.ntsystems.it -Port 25 -Count 4
+       This example tests for 4 times if port 25 can be reached on www.ntsystems.it
+    #>
     [CmdletBinding(SupportsShouldProcess=$true, 
                   PositionalBinding=$false,
                   HelpUri = 'http://www.ntsystems.it/')]
+    [Alias('ttcp')]
     [OutputType([bool])]
     param (
         [Parameter(Mandatory=$true, 
@@ -138,28 +162,48 @@ function Test-TCPConnection  {
         }
         $TCPConnection.Dispose()
     }
-    
-} # end function Test-TCPConnection
+}
+#endregion Test Connection
 
-
+#region EtcHosts
 function Show-EtcHosts {
+    <#
+    .Synopsis
+       Display \etc\hosts file content.
+    .DESCRIPTION
+       This funtion gets the content of the hosts file, parses the lines and outputs 
+       a custom object with HostName and IPAddress properties.
+    #>
+
+    [Alias('shosts')]
+    [OutputType([psobject])]
+
     # filter out comments and empty lines
-    $lines = Get-Content C:\Windows\System32\drivers\etc\hosts | Where-Object {$PSItem -notmatch "^#" -and $PSItem -ne ""}
+    $lines = Get-Content (Join-Path -Path $env:SystemRoot -ChildPath System32\drivers\etc\hosts) | Where-Object {$PSItem -notmatch "^#" -and $PSItem -ne ""}
         if ($lines){        # Split the content of $lines        $linesSplit = $lines -split '\s+'            
         # looping through the array, create key:value pairs and add them to $outData
         for ($i = 0; $i -lt $linesSplit.Count; $i++) {
             if ([bool]!($i%2)) {
                 $j = $i + 1 
-                $outData = @{'IPAddress'=$linesSplit[$i];'Hostname'=$linesSplit[$j]}
+                $outData = @{'IPAddress'=$linesSplit[$i];'HostName'=$linesSplit[$j]}
                                 # create custom object and write it to the pipeline                Write-Output (New-Object -TypeName psobject -Property $outData)
             }
         }    }
 }
-function Edit-EtcHosts {
-    Start-Process notepad -Verb RunAs -ArgumentList C:\Windows\System32\drivers\etc\hosts
-}
 
-#region Connect-Exchange
+function Edit-EtcHosts {
+    <#
+    .Synopsis
+       Edit \etc\hosts file with notepad.
+    .DESCRIPTION
+       This funtion starts notepad.exe as administrator and opens the hosts file for editing.
+    #>
+    # run notepad as administrator and open the hosts file for editing
+    Start-Process notepad -Verb RunAs -ArgumentList (Join-Path -Path $env:SystemRoot -ChildPath System32\drivers\etc\hosts)
+}
+#endregion EtcHosts
+
+#region PS Sessions
 function Connect-Exchange
 {
     [CmdletBinding()]
@@ -200,9 +244,8 @@ function Connect-Exchange
     } catch {
         Write-Warning "Could not connect to Exchange $($ExchangeSessionError.ErrorRecord)"
     }
-} # end Connect-Exchange
+} 
 
-# quick funtion to connect to lync
 function Connect-Lync
 {
     [CmdletBinding()]
@@ -242,9 +285,9 @@ function Connect-Lync
         Write-Warning "Could not connect to Exchange $($LyncSessionError.ErrorRecord)"
     }
 } 
-#endregion Connect-Exchange
+#endregion PS Sessions
 
-#region Invoke-WohisRequest
+#region WebRequests
 function Invoke-WhoisRequest 
 {
     <#
@@ -262,11 +305,8 @@ function Invoke-WhoisRequest
     $web = New-WebServiceProxy ‘http://www.webservicex.net/whois.asmx?WSDL’
     $web.GetWhoIs($domain)
 }
-#endregion Invoke-WohisRequest
 
-#region Get-MacAddressVendor
-function Get-MacAddressVendor
-{
+function Get-MacAddressVendor {
     <#
     .Synopsis
        Mac Address vendor lookup.
@@ -299,9 +339,7 @@ function Get-MacAddressVendor
         $MacAddress
     )
 
-    Begin
-    {
-    }
+    Begin { }
     Process
     {
         foreach ($macAddr in $MacAddress) {
@@ -322,9 +360,137 @@ function Get-MacAddressVendor
             Write-Output (New-Object -TypeName PSObject $outData)
         }
     }
-    End
+    End { }
+}
+#endregion WebRequests
+
+#region Converters
+function ConvertTo-Base64
+{
+    <#
+    .Synopsis
+       Convert a String to Base64
+    .DESCRIPTION
+       This Function uses [System.Convert] to convert a ClearText String to Base64
+    .EXAMPLE
+       ConvertTo-Base64 'my cleartext'
+    #>
+    [CmdletBinding()]
+    Param
+    (
+        # One or more Strings to be converted
+        [Parameter(Mandatory=$true,
+                   ValueFromPipeline=$true,
+                   Position=0)]
+        [String[]]$String
+    )
+        Write-Verbose "`$string is $string"
+        foreach ($str in $string) {
+            Write-Verbose "`$str is $str"
+            $objOut = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($str));
+            Write-Output $objOut
+        }
+}
+
+function ConvertFrom-Base64
+{
+    <#
+    .Synopsis
+       Convert Base64 to ClearText String
+    .DESCRIPTION
+       This Function uses [System.Convert] to convert Base64 encoded String to ClearText
+    .EXAMPLE
+       ConvertFrom-Base64 'YXdlc29tZSwgaXMgaXQ/'
+    #>
+    [CmdletBinding()]
+    Param
+    (
+        # One or more Strings to be converted
+        [Parameter(Mandatory=$true,
+                   ValueFromPipeline=$true,
+                   Position=0)]
+        [String[]]$String
+    )
+        Write-Verbose "`$string is $string"
+        foreach ($str in $string) {
+            Write-Verbose "`$str is $str"
+            $objOut = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($str));
+            Write-Output $objOut
+        }
+}
+
+function ConvertFrom-SID {
+    <#
+    .Synopsis
+       Get the account name for a SID.
+    .DESCRIPTION
+       Use [System.Security.Principal.SecurityIdentifier].Translate() to get the samAccountName for a SID
+    .INPUTS
+       You can pipe input to this function.
+    .OUTPUTS
+       Returns string values.
+    .EXAMPLE
+       ConvertFrom-SID -Sid S-1-5-21-2330142668-2157844774-769409458
+    .EXAMPLE
+       "S-1-3-1" | ConvertFrom-SID
+
+    #>
+    [CmdletBinding(ConfirmImpact='Medium')]
+    Param
+    (
+        # SID, specify the SID to translate.
+        [Parameter(Mandatory=$true,
+		   ValueFromPipeline=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        [ValidateNotNull()]
+        [ValidateNotNullOrEmpty()]
+        [Alias('Value')]
+        [System.Security.Principal.SecurityIdentifier]
+        $SID
+    )
+
+    Process
     {
+        $ntAccount = $SID.Translate([System.Security.Principal.NTAccount])
+        $ntAccount | Select-Object -ExpandProperty Value
     }
 }
-#endregion Get-MacAddressVendor
 
+function ConvertTo-SID {
+    <#
+    .Synopsis
+       Get the SID for an account name
+    .DESCRIPTION
+       Use [System.Security.Principal.SecurityIdentifier].Translate() to get the SID for a samAccountName
+    .INPUTS
+       You can pipe input to this function.
+    .OUTPUTS
+       Returns string values.
+    .EXAMPLE
+       ConvertTo-SID -SamAccountName ttorggler
+    .EXAMPLE
+       "ntsystems\ttorggler" | ConvertTo-SID
+    #>
+    [CmdletBinding(ConfirmImpact='Medium')]
+    Param
+    (
+        # SamAccountName, specify the account name to translate.
+        [Parameter(Mandatory=$true,
+		   ValueFromPipeline=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        [ValidateNotNull()]
+        [ValidateNotNullOrEmpty()]
+        [Alias('Value')]
+        [System.Security.Principal.NTAccount]
+        $SamAccountName
+    )
+
+    Process
+    {
+        $SID = $SamAccountName.Translate([System.Security.Principal.SecurityIdentifier])
+        $SID | Select-Object -ExpandProperty Value
+    }
+}
+#endregion Converters
