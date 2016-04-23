@@ -16,7 +16,7 @@ test_script:
         if ($res.FailedCount -gt 0) { 
             throw "$($res.FailedCount) tests failed."
         }
-deploy:
+deploy_script:
   - ps: |
       $manifest = Join-Path $pwd "tak.psd1"
       (Get-Content $manifest -Raw) -Replace("1\.0\.0\.\d{1}", $env:APPVEYOR_BUILD_VERSION) | Out-File $manifest
