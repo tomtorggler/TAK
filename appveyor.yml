@@ -1,4 +1,7 @@
 version: 1.0.0.{build}
+environment:
+  PSGALLERY_KEY:
+    secure: RMszZiCE/plk4eBiwX+qxsFc4e07dNqaYhklRq4pLwrAei6lch4pvjq03MiHuwqn
 hosts:
   test1.example.com: 10.1.1.1
   test2.example.com: 192.168.1.1
@@ -13,4 +16,8 @@ test_script:
         if ($res.FailedCount -gt 0) { 
             throw "$($res.FailedCount) tests failed."
         }
-deploy: off
+deploy:
+  - ps: |
+      $manifest = Join-Path $pwd "tak.psd1"
+      (Get-Content $manifest -Raw) -Replace("1\.0\.0\.\d{1}", $env:APPVEYOR_BUILD_VERSION) | Out-File $manifest
+      Publish-Module -NugetApiKey $env:PSGALLERY_KEY -Path (Join-Path $env:APPVEYOR_BUILD_FOLDER 'TAK')
