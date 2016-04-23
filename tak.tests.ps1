@@ -36,3 +36,16 @@ Describe "Test WebRequests" {
     }
 }
 
+Describe "Test EtcHosts" {
+    It "Show-EtcHosts Hostname" {
+        $result = Show-EtcHosts | select -ExpandProperty HostName
+        (-join $result) | Should match 'test1\.example\.com'
+        (-join $result) | Should match 'test2\.example\.com'
+    }
+    It "Show-EtcHosts IPAddress" {
+        $result = Show-EtcHosts | select -ExpandProperty IPAddress
+        (-join $result) | Should match '10\.1\.1\.1'
+        (-join $result) | Should match '192\.168\.1\.1'
+    }
+}
+
