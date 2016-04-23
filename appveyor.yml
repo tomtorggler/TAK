@@ -1,4 +1,5 @@
 version: 1.0.0.{build}
+os: WMF 5
 environment:
   PSGALLERY_KEY:
     secure: RMszZiCE/plk4eBiwX+qxsFc4e07dNqaYhklRq4pLwrAei6lch4pvjq03MiHuwqn
