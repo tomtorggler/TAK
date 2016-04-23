@@ -165,6 +165,180 @@ function Test-TCPConnection {
 }
 #endregion Test Connection
 
+#region Test Lync deployment
+function Test-LyncDNS {
+    <#
+    .Synopsis
+       Test DNS entries for Lync deployments.
+    .DESCRIPTION
+       This function uses Resolve-DnsName to query well-known DNS records for Lync deployments.
+       The NameSever parameter can be used to specify a nameserver.
+    .EXAMPLE
+       Test-LyncDNS -SipDomain uclab.eu
+       This example queries DNS records for the domain uclab.eu
+    #>
+    
+    [CmdletBinding()]
+    
+    param(
+        # specify the domain name
+        [Parameter(Mandatory=$true)]
+        [validateLength(3,255)]
+        [validatepattern("\w\.\w")]
+        [string]
+        $SipDomain,
+
+        # specify the nameserver to query
+        [Parameter(Mandatory=$false)]
+        [ValidateNotNullorEmpty()]
+        [Alias("Server")]
+        [ipaddress]
+        $NameServer,
+        
+        # use opendns server
+        [switch]
+        $OpenDNS,
+        
+        # also query for internal records
+        [switch]
+        $internal,
+        
+        # test tls connection to servers
+        [switch]
+        $testConnection
+    )
+
+    if ($NameServer) {
+        $rdnsCmd = @{
+            "ErrorAction"="SilentlyContinue";
+            "Server"="$NameServer"
+            "DnsOnly"=$true
+        }
+        Write-Verbose "using Nameserver $NameServer"
+    } elseif ($openDNS) {
+        $rdnsCmd = @{
+            "ErrorAction"="SilentlyContinue";
+            "Server"="208.67.222.222";
+            "DnsOnly"=$true
+        }
+        Write-Verbose "using OpenDS Nameserver $NameServer"
+    } else {
+        $rdnsCmd = @{
+            "ErrorAction"="SilentlyContinue";
+            "DnsOnly"=$true
+        }    
+        Write-Verbose "using default Nameserver"
+    }
+    
+    # define arrays 
+    $srvRecords = @()
+    $aRecords = @()
+
+    $srvRecords += Resolve-DnsName -Type SRV -Name "_sipfederationtls._tcp.$SipDomain" @rdnsCmd
+    $srvRecords += Resolve-DnsName -Type SRV -Name "_sip._tls.$SipDomain" @rdnsCmd
+    $srvRecords += Resolve-DnsName -Type SRV -Name "_xmpp-server._tcp.$SipDomain" @rdnsCmd
+    
+    # some a record names may be defined in the topology and therefore be different 
+    $aRecords += Resolve-DnsName -Type A -Name "LyncDiscover.$SipDomain" @rdnsCmd
+    $aRecords += Resolve-DnsName -Type A -Name "LyncWeb.$SipDomain" @rdnsCmd
+    $aRecords += Resolve-DnsName -Type A -Name "meet.$SipDomain" @rdnsCmd
+    $aRecords += Resolve-DnsName -Type A -Name "join.$SipDomain" @rdnsCmd
+    $aRecords += Resolve-DnsName -Type A -Name "dialin.$SipDomain" @rdnsCmd
+    $aRecords += Resolve-DnsName -Type A -Name "sipexternal.$SipDomain" @rdnsCmd
+    $aRecords += Resolve-DnsName -Type A -Name "webconf.$SipDomain" @rdnsCmd
+    $aRecords += Resolve-DnsName -Type A -Name "sip.$SipDomain" @rdnsCmd
+    $aRecords += Resolve-DnsName -Type A -Name "av.$SipDomain" @rdnsCmd
+    $aRecords += Resolve-DnsName -Type A -Name "avedge.$SipDomain" @rdnsCmd
+    $aRecords += Resolve-DnsName -Type A -Name "dataedge.$SipDomain" @rdnsCmd
+    $aRecords += Resolve-DnsName -Type A -Name "sipedge.$SipDomain" @rdnsCmd
+    $aRecords += Resolve-DnsName -Type A -Name "ucupdates-r2.$SipDomain" @rdnsCmd
+    $aRecords += Resolve-DnsName -Type A -Name "autodiscover.$SipDomain" @rdnsCmd
+    $aRecords += Resolve-DnsName -Type A -Name "owc.$SipDomain" @rdnsCmd
+    
+    # query domain root record to filter wildcard matches
+    $rootRecord = Resolve-DnsName -Type A -Name "$SipDomain" @rdnsCmd
+    
+    if($internal) {
+        $srvRecords += Resolve-DnsName -Type SRV -Name "_sipinternaltls._tcp.$SipDomain" @rdnsCmd
+        $aRecords += Resolve-DnsName -Type A -Name "LyncDiscoverInternal.$SipDomain" @rdnsCmd    
+        $aRecords += Resolve-DnsName -Type A -Name "sipinternal.$SipDomain" @rdnsCmd 
+    }
+    
+    $aRecords += $srvRecords | Where-Object {$PSItem -is [Microsoft.DnsClient.Commands.DnsRecord_A]} 
+    
+    $srvRecords | Where-Object {$PSItem -is [Microsoft.DnsClient.Commands.DnsRecord_SRV]}
+    $aRecords | Where-Object {$PSItem.IpAddress -ne $rootRecord.IP4Address -and $PSItem.Section -eq "Answer" -and $PSItem.}
+
+    if($testConnection) {
+        $aRecords | foreach {
+            Write-Verbose "Testing TLS connection for $($_.Name)"
+            Test-TLSConnection -ComputerName $_.Name -Silent
+        }
+        $srvRecords | foreach {
+            Write-Verbose "Testing TLS connection for $($_.Name):$($_.Port)"
+            Test-TLSConnection -ComputerName $_.NameTarget -Port $_.Port -Silent
+        }
+    }
+}
+
+function Test-LyncDiscover {
+    <#
+    .Synopsis
+       Test Lyncdiscover service
+    .DESCRIPTION
+       This function uses Invoke-WebRequest to test if the Lyncdiscover service is responding for a given domain.
+    .EXAMPLE
+       Test-LyncDiscover -SipDomain uclab.eu -Http
+       This example gets Lyncdiscover information over http for the domain uclab.eu
+    #>
+
+    [cmdletbinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [validateLength(3,255)]
+        [validatepattern("\w\.\w")]
+        [string]
+        $SipDomain,
+        
+        [switch]
+        $Http,
+        
+        [switch]
+        $internal
+    )
+
+    if($Http){
+        $uriPrefix = "http://"
+    } else {
+        $uriPrefix = "https://"
+    }
+
+    if($internal){
+        $uriHost = "lyncdiscoverinternal"
+    } else {
+        $uriHost = "lyncdiscover"
+    }
+
+    $uri = $uriPrefix + $uriHost + "." + $SIPDomain
+    try {
+        $webRequest = Invoke-WebRequest -Uri $uri -ErrorAction Stop
+        Write-Verbose $webRequest
+    } catch {
+        Write-Warning "Could not connect to $uri error $_"
+        return
+    }
+    if($webRequest.Headers.'Content-Type' -like 'application/json') {
+        $json = ConvertFrom-Json -InputObject $webRequest.Content
+    } else {
+        $json = ConvertFrom-Json -InputObject ([System.Text.Encoding]::ASCII.GetString($webRequest.Content))    
+    }
+
+    $json.AccessLocation
+    $json.Root.Links
+    $json._links
+}
+#endregion Test Lync deployment
+
 #region EtcHosts
 function Show-EtcHosts {
     <#
@@ -296,14 +470,21 @@ function Invoke-WhoisRequest
     .DESCRIPTION
        This function creats a New-WebServiceProxy and then uses the GetWhoIs method to query whois information from www.webservicex.net
     .EXAMPLE
-       Invoke-WhoisRequest -Domain ntsystems.it
+       Invoke-WhoisRequest -DomainName ntsystems.it
        This example queries whois information for the domain ntsystems.it
     #>
     [cmdletbinding()]
-    param($Domain)
+    param(
+        [Parameter(Mandatory=$true)]
+        [validateLength(3,255)]
+        [validatepattern("\w\.\w")]
+        [Alias('domain')]
+        [string]
+        $DomainName
+    )
     
     $web = New-WebServiceProxy ‘http://www.webservicex.net/whois.asmx?WSDL’
-    $web.GetWhoIs($domain)
+    $web.GetWhoIs($DomainName)
 }
 
 function Get-MacAddressVendor {
