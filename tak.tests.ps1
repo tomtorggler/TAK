@@ -1,5 +1,5 @@
 ﻿$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-Import-Module "$here\tak.psd1"
+Import-Module "$here\TAK\tak.psd1"
 
 Describe "Test Converters" {
     Context "Testing Base64" {
