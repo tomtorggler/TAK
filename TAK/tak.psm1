@@ -483,7 +483,7 @@ function Invoke-WhoisRequest
        This example queries whois information for the domain ntsystems.it
     #>
     [cmdletbinding()]
-    [Alias(whois)]
+    [Alias('whois')]
     param(
         [Parameter(Mandatory=$true)]
         [validateLength(3,255)]
@@ -635,6 +635,7 @@ function ConvertFrom-SID {
                    Position=0)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
+        [ValidatePattern("S-1-5-\d{2}-\d+")]
         [Alias('Value')]
         [System.Security.Principal.SecurityIdentifier]
         $SID
