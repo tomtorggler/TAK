@@ -20,6 +20,7 @@ function Test-TLSConnection {
     [Alias('ttls')]
     [OutputType([psobject],[bool])]
     param (
+        # Specifies the DNS name of the computer to test
         [Parameter(Mandatory=$true, 
                     Position=0)]
         [ValidateNotNull()]
@@ -27,6 +28,7 @@ function Test-TLSConnection {
         [Alias("HostName","Server","RemoteHost")] 
         $ComputerName,
 
+        # Specifies the TCP port on which the TLS service is running on the computer to test
         [Parameter(Mandatory=$false, 
                     Position=1)]
         [ValidateNotNull()]
@@ -35,14 +37,17 @@ function Test-TLSConnection {
         [ValidateRange(1,65535)]
         $Port = '443',
 
+        # Specifies a path to a file (.cer) where the certificate should be saved if the SaveCert switch parameter is used
         [Parameter(Mandatory=$false, 
                     Position=2)]
         [System.IO.FileInfo]
         $FilePath = "$env:TEMP\$computername.cer",
         
+        # Saves the remote certificate to a file, the path can be specified using the FilePath parameter
         [switch]
         $SaveCert,
 
+        # Only returns true or false, instead of a custom object with some information.
         [switch]
         $Silent
     )
@@ -124,6 +129,7 @@ function Test-TCPConnection {
     [Alias('ttcp')]
     [OutputType([bool])]
     param (
+        # Specifies the DNS name of the computer to test
         [Parameter(Mandatory=$true, 
                     Position=0)]
         [ValidateNotNull()]
@@ -131,6 +137,7 @@ function Test-TCPConnection {
         [Alias("HostName","Server","RemoteHost")] 
         $ComputerName,
 
+        # Specifies the TCP port to test on the remote computer.
         [Parameter(Mandatory=$false, 
                     Position=1)]
         [ValidateNotNull()]
@@ -139,6 +146,7 @@ function Test-TCPConnection {
         [ValidateRange(1,65535)]
         $Port = '80',
 
+        # Specifies the number of tests to run, this can be useful when testing load-balanced services; default is 1
         [int]
         $Count = 1
     )
@@ -179,29 +187,29 @@ function Test-LyncDNS {
     [CmdletBinding()]
     
     param(
-        # specify the domain name
+        # Specifies the DNS domain name to test
         [Parameter(Mandatory=$true)]
         [validateLength(3,255)]
         [validatepattern("\w\.\w")]
         [string]
         $SipDomain,
 
-        # specify the nameserver to query
+        # Specifies the nameserver which is used by Resolve-DnsName
         [Parameter(Mandatory=$false)]
         [ValidateNotNullorEmpty()]
         [Alias("Server")]
         [ipaddress]
         $NameServer,
         
-        # use opendns server
+        # A quick way to use OpenDns servers instead of using NameServer
         [switch]
         $OpenDNS,
         
-        # also query for internal records
+        # Do also query for internal records, they should only resolve when testing from the internal network
         [switch]
         $internal,
         
-        # test tls connection to servers
+        # Do also test a TLS connection to the servers received from the query
         [switch]
         $testConnection
     )
@@ -292,15 +300,18 @@ function Test-LyncDiscover {
 
     [cmdletbinding()]
     param(
+        # Specifies a DNS domain name to test
         [Parameter(Mandatory=$true)]
         [validateLength(3,255)]
         [validatepattern("\w\.\w")]
         [string]
         $SipDomain,
         
+        # Use HTTP instead of HTTPS
         [switch]
         $Http,
         
+        # Use internal name (lyncdiscoverinternl) instead of the external one (lyncdiscover)
         [switch]
         $internal
     )
@@ -381,7 +392,7 @@ function Connect-Exchange
     [CmdletBinding()]
     Param
     (
-        # Servername that the session will be connected to
+        # Specifies the ServerName that the session will be connected to
         [Parameter(Mandatory=$true,
                    ValueFromPipelineByPropertyName=$true,
                    Position=0)]
@@ -423,7 +434,7 @@ function Connect-Lync
     [CmdletBinding()]
     Param
     (
-        # Servername that the session will be connected to
+        # Specifies the ServerName that the session will be connected to
         [Parameter(Mandatory=$true,
                    ValueFromPipelineByPropertyName=$true,
                    Position=0)]
@@ -472,6 +483,7 @@ function Invoke-WhoisRequest
        This example queries whois information for the domain ntsystems.it
     #>
     [cmdletbinding()]
+    [Alias(whois)]
     param(
         [Parameter(Mandatory=$true)]
         [validateLength(3,255)]
@@ -504,8 +516,7 @@ function Get-MacAddressVendor {
        Get-DhcpServerv4Lease -ComputerName DhcpServer -ScopeId 192.168.1.0 | Get-MacAddressVendor
        This example looks up the vendor of all currently assigned address leases on a DHCP Server.
     #>
-    [CmdletBinding(PositionalBinding=$true,
-                  ConfirmImpact='Medium')]
+    [CmdletBinding(PositionalBinding=$true)]
     Param
     (
         # Specifiy a MAC Address to look up
