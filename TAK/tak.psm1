@@ -21,11 +21,13 @@ function Test-TLSConnection {
     [OutputType([psobject],[bool])]
     param (
         # Specifies the DNS name of the computer to test
-        [Parameter(Mandatory=$true, 
+        [Parameter(Mandatory=$true,
+                    ValueFromPipeline=$true,
+                    ValueFromPipelineByPropertyName=$true,
                     Position=0)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
-        [Alias("HostName","Server","RemoteHost")] 
+        [Alias("HostName","Server","RemoteHost","Name")] 
         $ComputerName,
 
         # Specifies the TCP port on which the TLS service is running on the computer to test
@@ -130,11 +132,13 @@ function Test-TCPConnection {
     [OutputType([bool])]
     param (
         # Specifies the DNS name of the computer to test
-        [Parameter(Mandatory=$true, 
+        [Parameter(Mandatory=$true,
+                    ValueFromPipeline=$true,
+                    ValueFromPipelineByPropertyName=$true, 
                     Position=0)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
-        [Alias("HostName","Server","RemoteHost")] 
+        [Alias("HostName","Server","RemoteHost","Name")] 
         $ComputerName,
 
         # Specifies the TCP port to test on the remote computer.
