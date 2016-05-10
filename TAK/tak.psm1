@@ -23,7 +23,6 @@ function Test-TLSConnection {
         # Specifies the DNS name of the computer to test
         [Parameter(Mandatory=$true,
                     ValueFromPipeline=$true,
-                    ValueFromPipelineByPropertyName=$true,
                     Position=0)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
@@ -133,12 +132,11 @@ function Test-TCPConnection {
     param (
         # Specifies the DNS name of the computer to test
         [Parameter(Mandatory=$true,
-                    ValueFromPipeline=$true,
-                    ValueFromPipelineByPropertyName=$true, 
+                    ValueFromPipeline=$true, 
                     Position=0)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
-        [Alias("HostName","Server","RemoteHost","Name")] 
+        [Alias("HostName","Server","RemoteHost")] 
         $ComputerName,
 
         # Specifies the TCP port to test on the remote computer.
@@ -163,13 +161,8 @@ function Test-TCPConnection {
         } Catch {
             Write-Verbose "Error connecting to $ComputerName on $Port : $_"
         }
-
-        If ($?) {
-            Write-Output $True
-            $TCPConnection.Close()
-        } else {
-            Write-Output $false
-        }
+        # output the connected state of TCPConnection
+        $TCPConnection.Connected
         $TCPConnection.Dispose()
     }
 }
@@ -367,15 +360,22 @@ function Show-EtcHosts {
 
     # filter out comments and empty lines
     $lines = Get-Content (Join-Path -Path $env:SystemRoot -ChildPath System32\drivers\etc\hosts) | Where-Object {$PSItem -notmatch "^#" -and $PSItem -ne ""}
-        if ($lines){        # Split the content of $lines        $linesSplit = $lines -split '\s+'            
+    
+    if ($lines){
+        # Split the content of $lines
+        $linesSplit = $lines -split '\s+'
+            
         # looping through the array, create key:value pairs and add them to $outData
         for ($i = 0; $i -lt $linesSplit.Count; $i++) {
             if ([bool]!($i%2)) {
                 $j = $i + 1 
                 $outData = @{'IPAddress'=$linesSplit[$i];'HostName'=$linesSplit[$j]}
-                                # create custom object and write it to the pipeline                Write-Output (New-Object -TypeName psobject -Property $outData)
+                
+                # create custom object and write it to the pipeline
+                Write-Output (New-Object -TypeName psobject -Property $outData)
             }
-        }    }
+        }
+    }
 }
 
 function Edit-EtcHosts {

@@ -77,4 +77,38 @@ Describe "Test EtcHosts" {
         (-join $result) | Should match '192\.168\.1\.1'
     }
 }
+
+Describe "Test Connection" {
+    Context "Test TCP Connection" {
+        It "returns true for reachable ports" {
+            Test-TCPConnection -ComputerName localhost -Port 135 | Should Be $true
+            "localhost" | Test-TCPConnection -Port 135 | Should Be $true
+        }
+        It "returns false for unreachable ports" {
+            Test-TCPConnection -ComputerName localhost -Port 22 | Should Be $false
+            "localhost" | Test-TCPConnection -Port 22 | Should Be $false
+        }
+        It "returns True for reachable ports" {
+            #New-Object -TypeName psobject -Property @{Name="localhost"} | Test-TCPConnection -Port 135 | Should Be $true
+        }
+        It "returns False for unreachable ports" {
+            #New-Object -TypeName psobject -Property @{Name="localhost"} | Test-TCPConnection -Port 22 | Should Be $false
+        }
+    }
+    Context "Test TLS Connection" {
+        It "returns Certificate information" {
+            Test-TLSConnection -ComputerName www.ntsystems.it | select -ExpandProperty Subject | Should Match "cloudflaressl"
+            "www.ntsystems.it" | Test-TLSConnection | select -ExpandProperty Subject | Should Match "cloudflaressl"
+        }
+        It "returns True when Silent parameter is used" {
+            Test-TLSConnection -ComputerName www.ntsystems.it -Port 443 -Silent | Should Be $true
+            "www.ntsystems.it" | Test-TLSConnection -Port 443 -Silent | Should Be $true
+        }
+        It "returns False if certificate is not trusted" {
+            Test-TLSConnection -ComputerName sip.uclab.eu -Port 5061 -WarningAction SilentlyContinue | Should Be $false
+            "sip.uclab.eu" | Test-TLSConnection -Port 5061 -WarningAction SilentlyContinue | Should Be $false            
+        }
+    }
+}
+
 Remove-Module Tak
