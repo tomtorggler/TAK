@@ -22,5 +22,5 @@ deploy_script:
       Install-PackageProvider -Name NuGet -Force 
       $manifest = Join-Path -Path $pwd -ChildPath "TAK\tak.psd1"
       (Get-Content $manifest -Raw) -Replace("1\.0\.0\.\d{1}", $env:APPVEYOR_BUILD_VERSION) | Out-File $manifest
-      $PublishPath = Join-Path -Path $env:APPVEYOR_BUILD_FOLDER -ChildPath TAK
+      $PublishPath = Join-Path -Path $pwd -ChildPath TAK
       Publish-Module -NugetApiKey $($env:PSGALLERY_KEY) -Path $PublishPath
