@@ -475,32 +475,6 @@ function Connect-Lync
 #endregion PS Sessions
 
 #region WebRequests
-function Invoke-WhoisRequest 
-{
-    <#
-    .Synopsis
-       Wohis request.
-    .DESCRIPTION
-       This function creats a New-WebServiceProxy and then uses the GetWhoIs method to query whois information from www.webservicex.net
-    .EXAMPLE
-       Invoke-WhoisRequest -DomainName ntsystems.it
-       This example queries whois information for the domain ntsystems.it
-    #>
-    [cmdletbinding()]
-    [Alias('whois')]
-    param(
-        [Parameter(Mandatory=$true)]
-        [validateLength(3,255)]
-        [validatepattern("\w\.\w")]
-        [Alias('domain')]
-        [string]
-        $DomainName
-    )
-    
-    $web = New-WebServiceProxy ‘http://www.webservicex.net/whois.asmx?WSDL’
-    $web.GetWhoIs($DomainName)
-}
-
 function Get-MacAddressVendor {
     <#
     .Synopsis
@@ -521,6 +495,7 @@ function Get-MacAddressVendor {
        This example looks up the vendor of all currently assigned address leases on a DHCP Server.
     #>
     [CmdletBinding(PositionalBinding=$true)]
+    [OutputType([psobject])]
     Param
     (
         # Specifiy a MAC Address to look up
@@ -532,7 +507,6 @@ function Get-MacAddressVendor {
         [Alias("ClientId")]
         $MacAddress
     )
-
     Begin { }
     Process
     {
