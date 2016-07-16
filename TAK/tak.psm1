@@ -663,3 +663,47 @@ function ConvertTo-SID {
     }
 }
 #endregion Converters
+
+#region Tools
+
+function Update-FileWriteTime {
+    <#
+    .Synopsis
+       Touch a file.
+    .DESCRIPTION
+       This function checks whether a given file exists, and if so, updates the LastWriteTime property of the given file.
+       Should the file not exist, a new, empty file is created.
+    .EXAMPLE
+       touch myfile
+
+       This example creates myfile if it does not exist in the current directory. 
+       If the file does exist, the LastWriteTime property will be updated.
+    #>
+    [CmdletBinding()]
+    [Alias('touch')]
+    Param
+    (
+        # One or more filenames to be touched
+        [Parameter(Mandatory=$true,
+                   ValueFromPipeline=$true,
+                   Position=0)]
+        [String[]]$Name,
+        # Specify a specific date for LastWriteTime 
+        [datetime]$Date = (Get-Date)
+    )
+    process {
+        foreach($file in $Name) {
+            $item = Get-Item -Path $file -ErrorAction SilentlyContinue
+            if($item) {
+                Write-Verbose "File does exist, updating LastWriteTime"
+                Set-ItemProperty -Path $file -Name LastWriteTime -Value $Date
+            } else {
+                Write-Verbose "File does not exist, creating file"
+                New-Item -Path $file -ErrorAction Stop
+            }
+        }   
+    }
+}
+
+
+#endregion Tools
