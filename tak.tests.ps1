@@ -119,7 +119,10 @@ Describe "Test Touch" {
             $newFile.Name | Should Be "inexistent.txt"
         }
         It "throws if no permissions to create file" {
-            { touch C:\windows\system32\newfile.txt } | Should Throw
+            { touch 'C:\System Volume Information\item' } | Should Throw
+        }
+        It "throws if path to file not found" {
+            { touch 'C:\blabla\item' } | Should Throw
         }
         Remove-Item .\inexistent.txt -ErrorAction SilentlyContinue
     }
