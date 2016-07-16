@@ -1,7 +1,7 @@
 version: 1.0.0.{build}
 os: WMF 5
 environment:
-  PSGALLERY_KEY:
+  psgkey:
     secure: RMszZiCE/plk4eBiwX+qxsFc4e07dNqaYhklRq4pLwrAei6lch4pvjq03MiHuwqn
 hosts:
   test1.example.com: 10.1.1.1
@@ -23,6 +23,4 @@ deploy_script:
       $manifest = Join-Path -Path $pwd -ChildPath "TAK\tak.psd1"
       (Get-Content $manifest -Raw) -Replace("1\.0\.0\.\d{1}", $env:APPVEYOR_BUILD_VERSION) | Out-File $manifest
       $PublishPath = Join-Path -Path $pwd -ChildPath TAK
-      $key = $env:PSGALLERY_KEY
-      $key
-      Publish-Module -NugetApiKey $key -Path $PublishPath
+      Publish-Module -NugetApiKey $($env:psgkey) -Path $PublishPath
