@@ -8,7 +8,6 @@ hosts:
   test2.example.com: 192.168.1.1
 install: 
   - cinst -y pester
-  - cinst -y powershell-packagemanagement
 build: off
 test_script:
     - ps: |
