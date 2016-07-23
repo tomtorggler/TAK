@@ -65,7 +65,21 @@ Describe "Test WebRequests" {
     }
 }
 
-Describe "Test EtcHosts" {
+Describe "Test Add-EtcHostsEntry" {
+    It "adds a line to the hosts file" {
+        $before = Get-Content C:\Windows\System32\drivers\etc\hosts | Measure-Object | Select-Object -ExpandProperty Count
+        Add-EtcHostsEntry -IPAddress '10.1.1.1' -Fqdn 'test1.example.com'
+        $after = Get-Content C:\Windows\System32\drivers\etc\hosts | Measure-Object | Select-Object -ExpandProperty Count
+        $before+1 | Should be $after
+    }
+    It "Show-EtcHosts IPAddress" {
+        $result = Show-EtcHosts | select -ExpandProperty IPAddress
+        (-join $result) | Should match '10\.1\.1\.1'
+        (-join $result) | Should match '192\.168\.1\.1'
+    }
+}
+
+Describe "Test Show-EtcHosts" {
     It "Show-EtcHosts Hostname" {
         $result = Show-EtcHosts | select -ExpandProperty HostName
         (-join $result) | Should match 'test1\.example\.com'

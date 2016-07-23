@@ -358,9 +358,10 @@ function Show-EtcHosts {
     [Alias('shosts')]
     [OutputType([psobject])]
 
-    # filter out comments and empty lines
-    $lines = Get-Content (Join-Path -Path $env:SystemRoot -ChildPath System32\drivers\etc\hosts) | Where-Object {$PSItem -notmatch "^#" -and $PSItem -ne ""}
-    
+    # get all lines that don't start with #
+    $hostsPath = Join-Path -Path $env:SystemRoot -ChildPath System32\drivers\etc\hosts
+    $lines = Select-String -Path $hostsPath -Pattern "^[^#]" |Select-Object -ExpandProperty line
+
     if ($lines){
         # Split the content of $lines
         $linesSplit = $lines -split '\s+'
@@ -388,6 +389,53 @@ function Edit-EtcHosts {
     # run notepad as administrator and open the hosts file for editing
     Start-Process notepad -Verb RunAs -ArgumentList (Join-Path -Path $env:SystemRoot -ChildPath System32\drivers\etc\hosts)
 }
+
+function Add-EtcHostsEntry {
+    <#
+    .Synopsis
+       Add an entry to local hosts file.
+    .DESCRIPTION
+       Adds a lines to the \etc\hosts file of the local computer.
+    .EXAMPLE
+       Add-EtcHostsEntry -IPAddress 1.1.1.1 -Fqdn test.fqdn
+       
+       This example adds following line to the hosts file
+       1.1.1.1 test.test 
+    #>
+
+    [CmdletBinding(SupportsShouldProcess=$true, 
+                  ConfirmImpact='Medium')]
+    Param
+    (
+        # IPAddress of the hosts entry to be added 
+        [Parameter(Mandatory=$true,
+                   Position=0)]
+        [ValidateNotNullOrEmpty()]
+        [Alias("ip")]
+        [String]
+        $IPAddress,
+
+        # FQDN of the hosts entry to be added 
+        [Parameter(Mandatory=$true,
+                   Position=1)]
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $Fqdn
+    )
+
+    $hostsPath = Join-Path -Path $env:SystemRoot -ChildPath System32\drivers\etc\hosts
+
+    $line = $IPAddress,$Fqdn -join "`t"
+
+    if ($pscmdlet.ShouldProcess("$hostsPath", "Add $line")) {
+        try {
+            Add-Content -Path $hostsPath -Value ("`r`n"+$line) -NoNewline -ErrorAction Stop
+        } catch {
+            Write-Warning "Could not add entry: $_"
+        }
+    }
+} # End Add-EtcHostsEntry
+
 #endregion EtcHosts
 
 #region PS Sessions
