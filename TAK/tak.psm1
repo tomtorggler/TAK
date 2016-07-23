@@ -462,16 +462,15 @@ function Remove-EtcHostsEntry {
         [String]
         $IPAddress
     )
-    $hostsPath = Join-Path -Path $env:SystemRoot -ChildPath System32\drivers\etc\hosts
-    $line = $IPAddress,$Fqdn -join "`t"
-    $NewContent = Select-String -Path $hostsPath -Pattern "^(?!$IPAddress)" | Select-Object -ExpandProperty line
+        $hostsPath = Join-Path -Path $env:SystemRoot -ChildPath System32\drivers\etc\hosts
+        $NewContent = Select-String -Path $hostsPath -Pattern "^(?!$IPAddress)" | Select-Object -ExpandProperty line
     
     if ($pscmdlet.ShouldProcess("$hostsPath", "Remove $IPAddress")) {
         try {
             Set-Content -Value $NewContent -Path $hostsPath -ErrorAction Stop
         } catch {
             Write-Warning "Could not remove entry: $_"
-        }
+        }   
     }
     
 } # End Add-EtcHostsEntry
