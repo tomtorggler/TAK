@@ -436,6 +436,47 @@ function Add-EtcHostsEntry {
     }
 } # End Add-EtcHostsEntry
 
+function Remove-EtcHostsEntry {
+    <#
+    .Synopsis
+       Remove an entry from local hosts file by it's IP address.
+    .DESCRIPTION
+       Find an IP address and remove all lines where it appears from the \etc\hosts file of the local computer.
+    .EXAMPLE
+       Remove-EtcHostsEntry -IPAddress 1.1.1.1 
+       
+       This example removes following lines from the hosts file
+       1.1.1.1 test.test 
+       1.1.1.1 another.test.com
+    #>
+
+    [CmdletBinding(SupportsShouldProcess=$true, 
+                  ConfirmImpact='Medium')]
+    Param
+    (
+        # IPAddress of the hosts entry to be added 
+        [Parameter(Mandatory=$false,
+                   Position=0)]
+        [ValidateNotNullOrEmpty()]
+        [Alias("ip")]
+        [String]
+        $IPAddress
+    )
+    $hostsPath = Join-Path -Path $env:SystemRoot -ChildPath System32\drivers\etc\hosts
+    $line = $IPAddress,$Fqdn -join "`t"
+    $NewContent = Select-String -Path $hostsPath -Pattern "^(?!$IPAddress)" | Select-Object -ExpandProperty line
+    
+    if ($pscmdlet.ShouldProcess("$hostsPath", "Remove $IPAddress")) {
+        try {
+            Set-Content -Value $NewContent -Path $hostsPath -ErrorAction Stop
+        } catch {
+            Write-Warning "Could not remove entry: $_"
+        }
+    }
+    
+} # End Add-EtcHostsEntry
+
+
 #endregion EtcHosts
 
 #region PS Sessions
