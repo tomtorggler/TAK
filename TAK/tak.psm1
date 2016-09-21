@@ -349,17 +349,26 @@ function Test-LyncDiscover {
 function Show-EtcHosts {
     <#
     .Synopsis
-       Display \etc\hosts file content.
+       Display /etc/hosts file content on Windows or Linux/macOS.
     .DESCRIPTION
        This funtion gets the content of the hosts file, parses the lines and outputs 
        a custom object with HostName and IPAddress properties.
     #>
+    [CmdletBinding()]
+    param()
+    # Alias/OutputType don't seem to work on Core?     
+    #[Alias('shosts')] 
+    #[OutputType([psobject])]
 
-    [Alias('shosts')]
-    [OutputType([psobject])]
+    if($PSVersionTable.PSEdition -eq "Core") {
+        Write-Verbose "PSEdition is $($PSVersionTable.PSEdition)"
+        $hostsPath = "/etc/hosts"
+    } else {
+        Write-Verbose "PSEdtion is $($PSVersionTable.PSEdition)"
+        $hostsPath = Join-Path -Path $env:SystemRoot -ChildPath System32\drivers\etc\hosts
+    }
 
     # get all lines that don't start with #
-    $hostsPath = Join-Path -Path $env:SystemRoot -ChildPath System32\drivers\etc\hosts
     $lines = Select-String -Path $hostsPath -Pattern "^[^#]" |Select-Object -ExpandProperty line
 
     if ($lines){
@@ -385,9 +394,19 @@ function Edit-EtcHosts {
        Edit \etc\hosts file with notepad.
     .DESCRIPTION
        This funtion starts notepad.exe as administrator and opens the hosts file for editing.
+       If this function is running on PowerShell Core, it runs "sudo vi /etc/hosts"
     #>
     # run notepad as administrator and open the hosts file for editing
-    Start-Process notepad -Verb RunAs -ArgumentList (Join-Path -Path $env:SystemRoot -ChildPath System32\drivers\etc\hosts)
+    if($PSVersionTable.PSEdition -eq "Core") {
+        Write-Verbose "PSEdition is $($PSVersionTable.PSEdition)"
+        $hostsPath = "/etc/hosts"
+        # would be nice to use $EDITOR varialbe...   
+        sudo vi $hostsPath
+    } else {
+        Write-Verbose "PSEdtion is $($PSVersionTable.PSEdition)"
+        $hostsPath = Join-Path -Path $env:SystemRoot -ChildPath System32\drivers\etc\hosts
+        Start-Process notepad -Verb RunAs -ArgumentList $hostsPath
+    }   
 }
 
 function Add-EtcHostsEntry {
@@ -395,7 +414,8 @@ function Add-EtcHostsEntry {
     .Synopsis
        Add an entry to local hosts file.
     .DESCRIPTION
-       Adds a lines to the \etc\hosts file of the local computer.
+       Adds a lines to the /etc/hosts file of the local computer. 
+       Requires write access to /etc/hosts - if running PowerShell Core on  Linux/macOS try "sudo powershell"
     .EXAMPLE
        Add-EtcHostsEntry -IPAddress 1.1.1.1 -Fqdn test.fqdn
        
@@ -423,7 +443,13 @@ function Add-EtcHostsEntry {
         $Fqdn
     )
 
-    $hostsPath = Join-Path -Path $env:SystemRoot -ChildPath System32\drivers\etc\hosts
+    if($PSVersionTable.PSEdition -eq "Core") {
+        Write-Verbose "PSEdition is $($PSVersionTable.PSEdition)"
+        $hostsPath = "/etc/hosts"
+    } else {
+        Write-Verbose "PSEdtion is $($PSVersionTable.PSEdition)"
+        $hostsPath = Join-Path -Path $env:SystemRoot -ChildPath System32\drivers\etc\hosts
+    }
 
     $line = $IPAddress,$Fqdn -join "`t"
 
@@ -569,6 +595,7 @@ function Get-MacAddressVendor {
        Mac Address vendor lookup.
     .DESCRIPTION
        This function uses Invoke-WebRequest to look up the vendor of a Mac Address' Organizationally Unique Identifier (OUI).
+       Works on PowerShell Core for Linux/macOS.
     .EXAMPLE
        Get-MacAddressVendor -MacAddress '00-50-56-C0-00-01','00:0F:FE:E8:4F:27'
        This example looks up the vendor for the two specified Mac Addresses.
@@ -630,6 +657,7 @@ function ConvertTo-Base64
        This Function uses [System.Convert] to convert a ClearText String to Base64
     .EXAMPLE
        ConvertTo-Base64 'my cleartext'
+       Beleive it or not, works on Linux/macOS!
     #>
     [CmdletBinding()]
     Param
@@ -654,7 +682,8 @@ function ConvertFrom-Base64
     .Synopsis
        Convert Base64 to ClearText String
     .DESCRIPTION
-       This Function uses [System.Convert] to convert Base64 encoded String to ClearText
+       This Function uses [System.Convert] to convert Base64 encoded String to ClearText.
+       Beleive it or not, works on Linux/macOS!
     .EXAMPLE
        ConvertFrom-Base64 'YXdlc29tZSwgaXMgaXQ/'
     #>
