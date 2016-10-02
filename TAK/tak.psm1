@@ -53,62 +53,81 @@ function Test-TLSConnection {
         $Silent
     )
 
-    try {
-        $TCPConnection = New-Object System.Net.Sockets.Tcpclient($ComputerName, $Port)
+    if($PSVersionTable.PSEdition -eq "Core") {
+        Write-Verbose "PSEdition is $($PSVersionTable.PSEdition)"
+        
+        if (Test-Path (which openssl)) {
+            Write-Verbose "Found openssl at $(which openssl)"
+            
+            Start-Process -FilePath openssl -ArgumentList "s_client -connect $(-join ($ComputerName,":",$Port))" -RedirectStandardOutput /Users/ttor/tmpcert123
+            $certificate = Get-Content -Path /Users/ttor/tmpcert123
+            $certificateX509 = New-Object system.security.cryptography.x509certificates.x509certificate2($certificate)
+            $certificateX509
 
-        Write-Verbose "TCP connection has succeeded"
-
-        $TCPStream     = $TCPConnection.GetStream()
+        } else {
+            Write-Warning "Could not find openssl."
+        }
+        
+    } else {
+        Write-Verbose "PSEdtion is $($PSVersionTable.PSEdition)"
 
         try {
-            $SSLStream = New-Object System.Net.Security.SslStream($TCPStream)
-            Write-Verbose "SSL connection has succeeded"
-            
+            $TCPConnection = New-Object System.Net.Sockets.Tcpclient($ComputerName, $Port)
+
+            Write-Verbose "TCP connection has succeeded"
+
+            $TCPStream     = $TCPConnection.GetStream()
+
             try {
-                $SSLStream.AuthenticateAsClient($ComputerName)
-                Write-Verbose "SSL authentication has succeeded"
+                $SSLStream = New-Object System.Net.Security.SslStream($TCPStream)
+                Write-Verbose "SSL connection has succeeded"
+                
+                try {
+                    $SSLStream.AuthenticateAsClient($ComputerName)
+                    Write-Verbose "SSL authentication has succeeded"
+                } catch {
+                    Write-Warning "There's a problem with SSL authentication to $ComputerName `n$_"
+                    return $false
+                }
+
+                $certificate = $SSLStream.get_remotecertificate()
+                $certificateX509 = New-Object system.security.cryptography.x509certificates.x509certificate2($certificate)
+                $SANextensions = New-Object system.security.cryptography.x509certificates.x509Certificate2Collection($certificateX509)
+                $SANextensions = $SANextensions.Extensions | Where-Object {$_.Oid.FriendlyName -eq "subject alternative name"}
+
+                $data = [ordered]@{
+                    'ComputerName'=$ComputerName;
+                    'Port'=$Port;
+                    'Issuer'=$SSLStream.RemoteCertificate.Issuer;
+                    'Subject'=$SSLStream.RemoteCertificate.Subject;
+                    'SerialNumber'=$SSLStream.RemoteCertificate.GetSerialNumberString();
+                    'ValidTo'=$SSLStream.RemoteCertificate.GetExpirationDateString();
+                    'SAN'=$SANextensions.Format(1);
+                }
+
+                if($Silent) {
+                    Write-Output $true
+                } else {
+                    Write-Output (New-Object -TypeName PSObject -Property $Data)
+                }
+
+                if ($SaveCert) {
+                    Write-Host "Saving cert to $FilePath" -ForegroundColor Yellow
+                    [system.io.file]::WriteAllBytes($FilePath,$certificateX509.Export("cer"))
+                }
+
             } catch {
-                Write-Warning "There's a problem with SSL authentication to $ComputerName `n$_"
-                return $false
-            }
-
-            $certificate = $SSLStream.get_remotecertificate()
-            $certificateX509 = New-Object system.security.cryptography.x509certificates.x509certificate2($certificate)
-            $SANextensions = New-Object system.security.cryptography.x509certificates.x509Certificate2Collection($certificateX509)
-            $SANextensions = $SANextensions.Extensions | Where-Object {$_.Oid.FriendlyName -eq "subject alternative name"}
-
-            $data = [ordered]@{
-                'ComputerName'=$ComputerName;
-                'Port'=$Port;
-                'Issuer'=$SSLStream.RemoteCertificate.Issuer;
-                'Subject'=$SSLStream.RemoteCertificate.Subject;
-                'SerialNumber'=$SSLStream.RemoteCertificate.GetSerialNumberString();
-                'ValidTo'=$SSLStream.RemoteCertificate.GetExpirationDateString();
-                'SAN'=$SANextensions.Format(1);
-            }
-
-            if($Silent) {
-                Write-Output $true
-            } else {
-                Write-Output (New-Object -TypeName PSObject -Property $Data)
-            }
-
-            if ($SaveCert) {
-                Write-Host "Saving cert to $FilePath" -ForegroundColor Yellow
-                [system.io.file]::WriteAllBytes($FilePath,$certificateX509.Export("cer"))
+                Write-Warning "$ComputerName doesn't support SSL connections at TCP port $Port `n$_"
             }
 
         } catch {
-            Write-Warning "$ComputerName doesn't support SSL connections at TCP port $Port `n$_"
+
+            $exception = New-Object system.net.sockets.socketexception
+            $errorcode = $exception.ErrorCode
+
+            Write-Warning "TCP connection to $ComputerName with IP $(([net.dns]::GetHostByName($ComputerName)).addresslist.ipaddresstostring) failed, error code:$errorcode"
+            Write-Warning "Error details: $exception"    
         }
-
-    } catch {
-
-        $exception = New-Object system.net.sockets.socketexception
-        $errorcode = $exception.ErrorCode
-
-        Write-Warning "TCP connection to $ComputerName with IP $(([net.dns]::GetHostByName($ComputerName)).addresslist.ipaddresstostring) failed, error code:$errorcode"
-        Write-Warning "Error details: $exception"    
     }
 }
 
