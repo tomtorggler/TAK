@@ -4,8 +4,8 @@ function Test-TLSConnection {
     .Synopsis
        Test if TLS Connection can be established.
     .DESCRIPTION
-       This function uses System.Net.Sockets.Tcpclient and System.Net.Security.SslStream to connect to a ComputerName and 
-       authenticate via TLS. This is useful to check if a TLS connection can be established and if the certificate used on 
+       This function uses System.Net.Sockets.Tcpclient and System.Net.Security.SslStream to connect to a ComputerName and
+       authenticate via TLS. This is useful to check if a TLS connection can be established and if the certificate used on
        the remote computer is trusted on the local machine.
        If the connection can be established, the certificate's properties will be output as custom object.
        Optionally the certificate can be downloaded using the -SaveCert switch.
@@ -13,10 +13,10 @@ function Test-TLSConnection {
        Test-TlsConnection -ComputerName www.ntsystems.it
        This example connects to www.ntsystems.it on port 443 (default) and outputs the certificate's properties.
     .EXAMPLE
-       Test-TlsConnection -ComputerName sipdir.online.lync.com -Port 5061 -SaveCert 
+       Test-TlsConnection -ComputerName sipdir.online.lync.com -Port 5061 -SaveCert
        This example connects to sipdir.online.lync.com on port 5061 and saves the certificate to the temp folder.
     #>
-    [CmdletBinding(HelpUri = 'http://www.ntsystems.it/')]
+    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/test-tlsconnection/')]
     [Alias('ttls')]
     [OutputType([psobject],[bool])]
     param (
@@ -26,24 +26,24 @@ function Test-TLSConnection {
                     Position=0)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
-        [Alias("HostName","Server","RemoteHost","Name")] 
+        [Alias("HostName","Server","RemoteHost","Name")]
         $ComputerName,
 
         # Specifies the TCP port on which the TLS service is running on the computer to test
-        [Parameter(Mandatory=$false, 
+        [Parameter(Mandatory=$false,
                     Position=1)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
-        [Alias("RemotePort")]    
+        [Alias("RemotePort")]
         [ValidateRange(1,65535)]
         $Port = '443',
 
         # Specifies a path to a file (.cer) where the certificate should be saved if the SaveCert switch parameter is used
-        [Parameter(Mandatory=$false, 
+        [Parameter(Mandatory=$false,
                     Position=2)]
         [System.IO.FileInfo]
         $FilePath = "$env:TEMP\$computername.cer",
-        
+
         # Saves the remote certificate to a file, the path can be specified using the FilePath parameter
         [switch]
         $SaveCert,
@@ -55,10 +55,10 @@ function Test-TLSConnection {
 
     if($PSVersionTable.PSEdition -eq "Core") {
         Write-Verbose "PSEdition is $($PSVersionTable.PSEdition)"
-        
+
         if (Test-Path (which openssl)) {
             Write-Verbose "Found openssl at $(which openssl)"
-            
+
             Start-Process -FilePath openssl -ArgumentList "s_client -connect $(-join ($ComputerName,":",$Port))" -RedirectStandardOutput /Users/ttor/tmpcert123
             $certificate = Get-Content -Path /Users/ttor/tmpcert123
             $certificateX509 = New-Object system.security.cryptography.x509certificates.x509certificate2($certificate)
@@ -67,7 +67,7 @@ function Test-TLSConnection {
         } else {
             Write-Warning "Could not find openssl."
         }
-        
+
     } else {
         Write-Verbose "PSEdtion is $($PSVersionTable.PSEdition)"
 
@@ -81,7 +81,7 @@ function Test-TLSConnection {
             try {
                 $SSLStream = New-Object System.Net.Security.SslStream($TCPStream)
                 Write-Verbose "SSL connection has succeeded"
-                
+
                 try {
                     $SSLStream.AuthenticateAsClient($ComputerName)
                     Write-Verbose "SSL authentication has succeeded"
@@ -126,7 +126,7 @@ function Test-TLSConnection {
             $errorcode = $exception.ErrorCode
 
             Write-Warning "TCP connection to $ComputerName with IP $(([net.dns]::GetHostByName($ComputerName)).addresslist.ipaddresstostring) failed, error code:$errorcode"
-            Write-Warning "Error details: $exception"    
+            Write-Warning "Error details: $exception"
         }
     }
 }
@@ -136,7 +136,7 @@ function Test-TCPConnection {
     .Synopsis
        Test if a TCP Connection can be established.
     .DESCRIPTION
-       This function uses System.Net.Sockets.Tcpclient to test if a TCP connection can be established with a 
+       This function uses System.Net.Sockets.Tcpclient to test if a TCP connection can be established with a
        ComputerName on a given port. Much like "telnet" which is not installed by default.
     .EXAMPLE
        Test-TcpConnection -ComputerName www.ntsystems.it
@@ -145,25 +145,25 @@ function Test-TCPConnection {
        Test-TcpConnection -ComputerName www.ntsystems.it -Port 25 -Count 4
        This example tests for 4 times if port 25 can be reached on www.ntsystems.it
     #>
-    [CmdletBinding(HelpUri = 'http://www.ntsystems.it/')]
+    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/test-tcpconnection/')]
     [Alias('ttcp')]
     [OutputType([bool])]
     param (
         # Specifies the DNS name of the computer to test
         [Parameter(Mandatory=$true,
-                    ValueFromPipeline=$true, 
+                    ValueFromPipeline=$true,
                     Position=0)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
-        [Alias("HostName","Server","RemoteHost")] 
+        [Alias("HostName","Server","RemoteHost")]
         $ComputerName,
 
         # Specifies the TCP port to test on the remote computer.
-        [Parameter(Mandatory=$false, 
+        [Parameter(Mandatory=$false,
                     Position=1)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
-        [Alias("RemotePort")]    
+        [Alias("RemotePort")]
         [ValidateRange(1,65535)]
         $Port = '80',
 
@@ -173,10 +173,10 @@ function Test-TCPConnection {
     )
 
     for ($i = 0; $i -lt $Count; $i++)
-    { 
+    {
         $TCPConnection = New-Object System.Net.Sockets.Tcpclient
-        Try { 
-            $TCPConnection.Connect($ComputerName, $Port) 
+        Try {
+            $TCPConnection.Connect($ComputerName, $Port)
         } Catch {
             Write-Verbose "Error connecting to $ComputerName on $Port : $_"
         }
@@ -199,9 +199,9 @@ function Test-LyncDNS {
        Test-LyncDNS -SipDomain uclab.eu
        This example queries DNS records for the domain uclab.eu
     #>
-    
-    [CmdletBinding()]
-    
+
+    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/test-lyncdns/')]
+
     param(
         # Specifies the DNS domain name to test
         [Parameter(Mandatory=$true)]
@@ -216,15 +216,15 @@ function Test-LyncDNS {
         [Alias("Server")]
         [ipaddress]
         $NameServer,
-        
+
         # A quick way to use OpenDns servers instead of using NameServer
         [switch]
         $OpenDNS,
-        
+
         # Do also query for internal records, they should only resolve when testing from the internal network
         [switch]
         $internal,
-        
+
         # Do also test a TLS connection to the servers received from the query
         [switch]
         $testConnection
@@ -248,19 +248,19 @@ function Test-LyncDNS {
         $rdnsCmd = @{
             "ErrorAction"="SilentlyContinue";
             "DnsOnly"=$true
-        }    
+        }
         Write-Verbose "using default Nameserver"
     }
-    
-    # define arrays 
+
+    # define arrays
     $srvRecords = @()
     $aRecords = @()
 
     $srvRecords += Resolve-DnsName -Type SRV -Name "_sipfederationtls._tcp.$SipDomain" @rdnsCmd
     $srvRecords += Resolve-DnsName -Type SRV -Name "_sip._tls.$SipDomain" @rdnsCmd
     $srvRecords += Resolve-DnsName -Type SRV -Name "_xmpp-server._tcp.$SipDomain" @rdnsCmd
-    
-    # some a record names may be defined in the topology and therefore be different 
+
+    # some a record names may be defined in the topology and therefore be different
     $aRecords += Resolve-DnsName -Type A -Name "LyncDiscover.$SipDomain" @rdnsCmd
     $aRecords += Resolve-DnsName -Type A -Name "LyncWeb.$SipDomain" @rdnsCmd
     $aRecords += Resolve-DnsName -Type A -Name "meet.$SipDomain" @rdnsCmd
@@ -276,18 +276,18 @@ function Test-LyncDNS {
     $aRecords += Resolve-DnsName -Type A -Name "ucupdates-r2.$SipDomain" @rdnsCmd
     $aRecords += Resolve-DnsName -Type A -Name "autodiscover.$SipDomain" @rdnsCmd
     $aRecords += Resolve-DnsName -Type A -Name "owc.$SipDomain" @rdnsCmd
-    
+
     # query domain root record to filter wildcard matches
     $rootRecord = Resolve-DnsName -Type A -Name "$SipDomain" @rdnsCmd
-    
+
     if($internal) {
         $srvRecords += Resolve-DnsName -Type SRV -Name "_sipinternaltls._tcp.$SipDomain" @rdnsCmd
-        $aRecords += Resolve-DnsName -Type A -Name "LyncDiscoverInternal.$SipDomain" @rdnsCmd    
-        $aRecords += Resolve-DnsName -Type A -Name "sipinternal.$SipDomain" @rdnsCmd 
+        $aRecords += Resolve-DnsName -Type A -Name "LyncDiscoverInternal.$SipDomain" @rdnsCmd
+        $aRecords += Resolve-DnsName -Type A -Name "sipinternal.$SipDomain" @rdnsCmd
     }
-    
-    $aRecords += $srvRecords | Where-Object {$PSItem -is [Microsoft.DnsClient.Commands.DnsRecord_A]} 
-    
+
+    $aRecords += $srvRecords | Where-Object {$PSItem -is [Microsoft.DnsClient.Commands.DnsRecord_A]}
+
     $srvRecords | Where-Object {$PSItem -is [Microsoft.DnsClient.Commands.DnsRecord_SRV]}
     $aRecords | Where-Object {$PSItem.IpAddress -ne $rootRecord.IP4Address -and $PSItem.Section -eq "Answer"}
 
@@ -314,7 +314,7 @@ function Test-LyncDiscover {
        This example gets Lyncdiscover information over http for the domain uclab.eu
     #>
 
-    [cmdletbinding()]
+    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/test-lyncdiscover/')]
     param(
         # Specifies a DNS domain name to test
         [Parameter(Mandatory=$true)]
@@ -322,11 +322,11 @@ function Test-LyncDiscover {
         [validatepattern("\w\.\w")]
         [string]
         $SipDomain,
-        
+
         # Use HTTP instead of HTTPS
         [switch]
         $Http,
-        
+
         # Use internal name (lyncdiscoverinternl) instead of the external one (lyncdiscover)
         [switch]
         $internal
@@ -355,7 +355,7 @@ function Test-LyncDiscover {
     if($webRequest.Headers.'Content-Type' -like 'application/json') {
         $json = ConvertFrom-Json -InputObject $webRequest.Content
     } else {
-        $json = ConvertFrom-Json -InputObject ([System.Text.Encoding]::ASCII.GetString($webRequest.Content))    
+        $json = ConvertFrom-Json -InputObject ([System.Text.Encoding]::ASCII.GetString($webRequest.Content))
     }
 
     $json.AccessLocation
@@ -370,13 +370,13 @@ function Show-EtcHosts {
     .Synopsis
        Display /etc/hosts file content on Windows or Linux/macOS.
     .DESCRIPTION
-       This funtion gets the content of the hosts file, parses the lines and outputs 
+       This funtion gets the content of the hosts file, parses the lines and outputs
        a custom object with HostName and IPAddress properties.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/show-etchosts/')]
     param()
-    # Alias/OutputType don't seem to work on Core?     
-    #[Alias('shosts')] 
+    # Alias/OutputType don't seem to work on Core?
+    #[Alias('shosts')]
     #[OutputType([psobject])]
 
     if($PSVersionTable.PSEdition -eq "Core") {
@@ -393,13 +393,13 @@ function Show-EtcHosts {
     if ($lines){
         # Split the content of $lines
         $linesSplit = $lines -split '\s+'
-            
+
         # looping through the array, create key:value pairs and add them to $outData
         for ($i = 0; $i -lt $linesSplit.Count; $i++) {
             if ([bool]!($i%2)) {
-                $j = $i + 1 
+                $j = $i + 1
                 $outData = @{'IPAddress'=$linesSplit[$i];'HostName'=$linesSplit[$j]}
-                
+
                 # create custom object and write it to the pipeline
                 Write-Output (New-Object -TypeName psobject -Property $outData)
             }
@@ -419,13 +419,13 @@ function Edit-EtcHosts {
     if($PSVersionTable.PSEdition -eq "Core") {
         Write-Verbose "PSEdition is $($PSVersionTable.PSEdition)"
         $hostsPath = "/etc/hosts"
-        # would be nice to use $EDITOR varialbe...   
+        # would be nice to use $EDITOR varialbe...
         sudo vi $hostsPath
     } else {
         Write-Verbose "PSEdtion is $($PSVersionTable.PSEdition)"
         $hostsPath = Join-Path -Path $env:SystemRoot -ChildPath System32\drivers\etc\hosts
         Start-Process notepad -Verb RunAs -ArgumentList $hostsPath
-    }   
+    }
 }
 
 function Add-EtcHostsEntry {
@@ -433,20 +433,21 @@ function Add-EtcHostsEntry {
     .Synopsis
        Add an entry to local hosts file.
     .DESCRIPTION
-       Adds a lines to the /etc/hosts file of the local computer. 
+       Adds a lines to the /etc/hosts file of the local computer.
        Requires write access to /etc/hosts - if running PowerShell Core on  Linux/macOS try "sudo powershell"
     .EXAMPLE
        Add-EtcHostsEntry -IPAddress 1.1.1.1 -Fqdn test.fqdn
-       
+
        This example adds following line to the hosts file
-       1.1.1.1 test.test 
+       1.1.1.1 test.test
     #>
 
-    [CmdletBinding(SupportsShouldProcess=$true, 
+    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/add-etchostsentry/',
+                  SupportsShouldProcess=$true,
                   ConfirmImpact='Medium')]
     Param
     (
-        # IPAddress of the hosts entry to be added 
+        # IPAddress of the hosts entry to be added
         [Parameter(Mandatory=$true,
                    Position=0)]
         [ValidateNotNullOrEmpty()]
@@ -454,7 +455,7 @@ function Add-EtcHostsEntry {
         [String]
         $IPAddress,
 
-        # FQDN of the hosts entry to be added 
+        # FQDN of the hosts entry to be added
         [Parameter(Mandatory=$true,
                    Position=1)]
         [ValidateNotNullOrEmpty()]
@@ -488,18 +489,18 @@ function Remove-EtcHostsEntry {
     .DESCRIPTION
        Find an IP address and remove all lines where it appears from the \etc\hosts file of the local computer.
     .EXAMPLE
-       Remove-EtcHostsEntry -IPAddress 1.1.1.1 
-       
+       Remove-EtcHostsEntry -IPAddress 1.1.1.1
+
        This example removes following lines from the hosts file
-       1.1.1.1 test.test 
+       1.1.1.1 test.test
        1.1.1.1 another.test.com
     #>
 
-    [CmdletBinding(SupportsShouldProcess=$true, 
+    [CmdletBinding(SupportsShouldProcess=$true,
                   ConfirmImpact='Medium')]
     Param
     (
-        # IPAddress of the hosts entry to be added 
+        # IPAddress of the hosts entry to be added
         [Parameter(Mandatory=$false,
                    Position=0)]
         [ValidateNotNullOrEmpty()]
@@ -509,15 +510,15 @@ function Remove-EtcHostsEntry {
     )
         $hostsPath = Join-Path -Path $env:SystemRoot -ChildPath System32\drivers\etc\hosts
         $NewContent = Select-String -Path $hostsPath -Pattern "^(?!$IPAddress)" | Select-Object -ExpandProperty line
-    
+
     if ($pscmdlet.ShouldProcess("$hostsPath", "Remove $IPAddress")) {
         try {
             Set-Content -Value $NewContent -Path $hostsPath -ErrorAction Stop
         } catch {
             Write-Warning "Could not remove entry: $_"
-        }   
+        }
     }
-    
+
 } # End Add-EtcHostsEntry
 
 
@@ -535,7 +536,7 @@ function Connect-Exchange
                    Position=0)]
         $Server,
 
-        # Credential used for connection; if not specified, the currently logged on user will be used 
+        # Credential used for connection; if not specified, the currently logged on user will be used
         [pscredential]
         $Credential
     )
@@ -564,7 +565,7 @@ function Connect-Exchange
     } catch {
         Write-Warning "Could not connect to Exchange $($ExchangeSessionError.ErrorRecord)"
     }
-} 
+}
 
 function Connect-Lync
 {
@@ -577,7 +578,7 @@ function Connect-Lync
                    Position=0)]
         $Server,
 
-        # Credential used for connection; if not specified, the currently logged on user will be used 
+        # Credential used for connection; if not specified, the currently logged on user will be used
         [pscredential]
         $Credential
     )
@@ -604,7 +605,7 @@ function Connect-Lync
     } catch {
         Write-Warning "Could not connect to Exchange $($LyncSessionError.ErrorRecord)"
     }
-} 
+}
 #endregion PS Sessions
 
 #region WebRequests
@@ -808,14 +809,14 @@ function Update-FileWriteTime {
        Touch a file.
     .DESCRIPTION
        This function checks whether a given file exists, and if so, updates the LastWriteTime property of the given file.
-       Should the file not exist, a new, empty file is created.
+       Should the file not exist, a new, empty file is created. This function works on Linux/macOS.
     .EXAMPLE
        touch myfile
 
-       This example creates myfile if it does not exist in the current directory. 
+       This example creates myfile if it does not exist in the current directory.
        If the file does exist, the LastWriteTime property will be updated.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/update-filewritetime/')]
     [Alias('touch')]
     Param
     (
@@ -824,7 +825,7 @@ function Update-FileWriteTime {
                    ValueFromPipeline=$true,
                    Position=0)]
         [String[]]$Name,
-        # Specify a specific date for LastWriteTime 
+        # Specify a specific date for LastWriteTime
         [datetime]$Date = (Get-Date)
     )
     process {
@@ -837,7 +838,7 @@ function Update-FileWriteTime {
                 Write-Verbose "File does not exist, creating file"
                 New-Item -Path $file -ErrorAction Stop
             }
-        }   
+        }
     }
 }
 
