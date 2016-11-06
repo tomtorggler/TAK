@@ -442,9 +442,10 @@ function Add-EtcHostsEntry {
        1.1.1.1 test.test
     #>
 
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/add-etchostsentry/',
-                  SupportsShouldProcess=$true,
-                  ConfirmImpact='Medium')]
+    [CmdletBinding(
+        HelpUri = 'https://ntsystems.it/PowerShell/TAK/add-etchostsentry/',
+        SupportsShouldProcess=$true,
+        ConfirmImpact='Medium')]
     Param
     (
         # IPAddress of the hosts entry to be added
@@ -629,7 +630,9 @@ function Get-MacAddressVendor {
        Get-DhcpServerv4Lease -ComputerName DhcpServer -ScopeId 192.168.1.0 | Get-MacAddressVendor
        This example looks up the vendor of all currently assigned address leases on a DHCP Server.
     #>
-    [CmdletBinding(PositionalBinding=$true)]
+    [CmdletBinding(
+        HelpUri = 'https://ntsystems.it/PowerShell/TAK/get-macaddressvendor/',
+        PositionalBinding=$true)]
     [OutputType([psobject])]
     Param
     (
