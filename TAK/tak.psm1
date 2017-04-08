@@ -533,13 +533,19 @@ function Connect-Exchange
     (
         # Specifies the ServerName that the session will be connected to
         [Parameter(Mandatory=$true,
+                   ParameterSetName="Server",
                    ValueFromPipelineByPropertyName=$true,
                    Position=0)]
         $Server,
 
         # Credential used for connection; if not specified, the currently logged on user will be used
         [pscredential]
-        $Credential
+        $Credential,
+
+        # Specify the Online switch to connect to Exchange Online / Office 365
+        [Parameter(ParameterSetName="Online")]
+        [switch]
+        $Online
     )
     if ((Get-PSSession).ConfigurationName -ne "Microsoft.Exchange" -and $Credential) {
         $params = @{
@@ -560,7 +566,13 @@ function Connect-Exchange
         Write-Warning "Already connected to Exchange"
         break
     }
+    if ($Online) {
+        $params.ConnectionUri = "https://outlook.office365.com/powershell-liveid/"
+        $params.Authentication = "Basic"
+        $params.Add("AllowRedirection",$true)
+    }
     try {
+        Write-Verbose "Trying to connect to $($params.ConnectionUri)"
         $sExch = New-PSSession @params -ErrorAction Stop -ErrorVariable ExchangeSessionError
 	    Import-PSSession $sExch
     } catch {
@@ -667,6 +679,31 @@ function Get-MacAddressVendor {
         }
     }
     End { }
+}
+function Invoke-WhoisRequest 
+{
+    <#
+    .Synopsis
+       Wohis request.
+    .DESCRIPTION
+       This function creats a New-WebServiceProxy and then uses the GetWhoIs method to query whois information from www.webservicex.net
+    .EXAMPLE
+       Invoke-WhoisRequest -DomainName ntsystems.it
+       This example queries whois information for the domain ntsystems.it
+    #>
+    [CmdletBinding()]
+    [Alias('whois')]
+    param(
+        [Parameter(Mandatory=$true)]
+        [validateLength(3,255)]
+        [validatepattern("\w\.\w")]
+        [Alias('domain')]
+        [string]
+        $DomainName
+    )
+    
+    $web = New-WebServiceProxy ‘http://www.webservicex.net/whois.asmx?WSDL’
+    $web.GetWhoIs($DomainName)
 }
 #endregion WebRequests
 
