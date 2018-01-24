@@ -15,13 +15,13 @@ build_script:
       $manifest = Join-Path -Path $pwd -ChildPath "TAK\tak.psd1"
       (Get-Content $manifest -Raw) -Replace("1\.0\.2\.\d{1}", $env:APPVEYOR_BUILD_VERSION) | Out-File $manifest
 test_script:
-    - ps: |
-        $testResultsFile = ".\TestsResults.xml"
-        $res = Invoke-Pester -OutputFormat NUnitXml -OutputFile $testResultsFile -PassThru
-        (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path $testResultsFile))
-        if ($res.FailedCount -gt 0) { 
-            throw "$($res.FailedCount) tests failed."
-        }
+  - ps: |
+      $testResultsFile = ".\TestsResults.xml"
+      $res = Invoke-Pester -OutputFormat NUnitXml -OutputFile $testResultsFile -PassThru
+      (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path $testResultsFile))
+      if ($res.FailedCount -gt 0) { 
+          throw "$($res.FailedCount) tests failed."
+      }
 deploy_script:
   - ps: |
       Publish-Module -NugetApiKey $env:psgkey -Path ($PublishPath = Join-Path -Path $pwd -ChildPath TAK) -Confirm:$false
