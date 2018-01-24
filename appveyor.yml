@@ -1,4 +1,4 @@
-version: 1.0.1.{build}
+version: 1.0.2.{build}
 os: WMF 5
 environment:
   psgkey:
@@ -9,6 +9,7 @@ hosts:
 install: 
   - cinst -y pester
   - ps: try { Find-Package -Name zzzzzzzzzzzzz -Force -ForceBootstrap -ErrorAction Stop; } catch { Write-Warning -Message 'Finished bootstrap.'; };
+build_script: ""
 build: off
 test_script:
     - ps: |
@@ -22,5 +23,5 @@ deploy_script:
   - ps: |
       Install-PackageProvider -Name NuGet -Force 
       $manifest = Join-Path -Path $pwd -ChildPath "TAK\tak.psd1"
-      (Get-Content $manifest -Raw) -Replace("1\.0\.0\.\d{1}", $env:APPVEYOR_BUILD_VERSION) | Out-File $manifest
+      (Get-Content $manifest -Raw) -Replace("1\.0\.2\.\d{1}", $env:APPVEYOR_BUILD_VERSION) | Out-File $manifest
       Publish-Module -NugetApiKey $env:psgkey -Path ($PublishPath = Join-Path -Path $pwd -ChildPath TAK) -Confirm:$false
