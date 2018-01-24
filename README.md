@@ -1,4 +1,4 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/22d1idxb0f5akute?svg=true)](https://ci.appveyor.com/project/tomtorggler/tak)
+[![Build status](https://ci.appveyor.com/api/projects/status/4ihjpqd6c8f9cceq?svg=true)](https://ci.appveyor.com/project/tomtorggler/tak)
 
 # TAK
 Tom's Admin Kit - a collection of functions and snippets
