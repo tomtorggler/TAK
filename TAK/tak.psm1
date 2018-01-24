@@ -187,13 +187,13 @@ function Test-TCPConnection {
 }
 #endregion Test Connection
 
-#region Test Lync deployment
-function Test-LyncDNS {
+#region Test Skype for Business / Lync deployment
+function Test-SfBDNS {
     <#
     .Synopsis
-       Test DNS entries for Lync deployments.
+       Test DNS entries for Skype for Business / Lync deployments.
     .DESCRIPTION
-       This function uses Resolve-DnsName to query well-known DNS records for Lync deployments.
+       This function uses Resolve-DnsName to query well-known DNS records for Skype for Business / Lync deployments.
        The NameSever parameter can be used to specify a nameserver.
     .EXAMPLE
        Test-LyncDNS -SipDomain uclab.eu
@@ -229,6 +229,10 @@ function Test-LyncDNS {
         [switch]
         $testConnection
     )
+
+    if ($MyInvocation.InvocationName -ne $MyInvocation.MyCommand) {
+        Write-Host "Please use $($MyInvocation.MyCommand), this alias will be deprecated in a future version." -ForegroundColor Yellow
+    }
 
     if ($NameServer) {
         $rdnsCmd = @{
@@ -303,12 +307,12 @@ function Test-LyncDNS {
     }
 }
 
-function Test-LyncDiscover {
+function Test-SfBDiscover {
     <#
     .Synopsis
-       Test Lyncdiscover service
+       Test the Lyncdiscover service for Skype for Business/Lync deployments
     .DESCRIPTION
-       This function uses Invoke-WebRequest to test if the Lyncdiscover service is responding for a given domain.
+       This function uses Invoke-RestMethod to test if the Lyncdiscover service is responding for a given domain.
     .EXAMPLE
        Test-LyncDiscover -SipDomain uclab.eu -Http
        This example gets Lyncdiscover information over http for the domain uclab.eu
@@ -332,6 +336,10 @@ function Test-LyncDiscover {
         $internal
     )
 
+    if ($MyInvocation.InvocationName -ne $MyInvocation.MyCommand) {
+        Write-Host "Please use $($MyInvocation.MyCommand), this alias will be deprecated in a future version." -ForegroundColor Yellow
+    }
+
     if($Http){
         $uriPrefix = "http://"
     } else {
@@ -346,22 +354,21 @@ function Test-LyncDiscover {
 
     $uri = $uriPrefix + $uriHost + "." + $SIPDomain
     try {
-        $webRequest = Invoke-WebRequest -Uri $uri -ErrorAction Stop
+        $webRequest = Invoke-RestMethod -Uri $uri -ErrorAction Stop
         Write-Verbose $webRequest
     } catch {
         Write-Warning "Could not connect to $uri error $_"
         return
     }
-    if($webRequest.Headers.'Content-Type' -like 'application/json') {
-        $json = ConvertFrom-Json -InputObject $webRequest.Content
-    } else {
-        $json = ConvertFrom-Json -InputObject ([System.Text.Encoding]::ASCII.GetString($webRequest.Content))
+    $out = [ordered]@{
+        "self" = $webRequest._links.self.href
+        "user" = $webRequest._links.user.href
+        "xframe" = $webRequest._links.xframe.href
     }
-
-    $json.AccessLocation
-    $json.Root.Links
-    $json._links
+    # Create a custom object and add a custom TypeName for formatting before writing to pipeline
+    Write-Output (New-Object -TypeName psobject -Property $out | Add-Member -TypeName 'System.TAK.SfBDiscover' -PassThru) 
 }
+
 #endregion Test Lync deployment
 
 #region EtcHosts
@@ -567,6 +574,9 @@ function Connect-Exchange
         break
     }
     if ($Online) {
+        if (-not($params.Credential)) {
+            $params.Credential = Get-Credential
+        }
         $params.ConnectionUri = "https://outlook.office365.com/powershell-liveid/"
         $params.Authentication = "Basic"
         $params.Add("AllowRedirection",$true)
@@ -580,7 +590,7 @@ function Connect-Exchange
     }
 }
 
-function Connect-Lync
+function Connect-SfB
 {
     [CmdletBinding()]
     Param
@@ -595,6 +605,9 @@ function Connect-Lync
         [pscredential]
         $Credential
     )
+    if ($MyInvocation.InvocationName -ne $MyInvocation.MyCommand) {
+        Write-Host "Please use $($MyInvocation.MyCommand), this alias will be deprecated in a future version." -ForegroundColor Yellow
+    }
     if ((Get-PSSession).Name -ne "LyncMgmt" -and $Credential) {
         $params = @{
             Name = "LyncMgmt";
@@ -884,3 +897,11 @@ function Update-FileWriteTime {
 
 
 #endregion Tools
+
+#region define aliases 
+
+New-Alias -Name Test-LyncDiscover -Value Test-SfBDiscover -ErrorAction SilentlyContinue
+New-Alias -Name Test-LyncDNS -Value Test-SfBDNS -ErrorAction SilentlyContinue
+New-Alias -Name Connect-Lync -Value Connect-SfB -ErrorAction SilentlyContinue
+
+#endregion aliases

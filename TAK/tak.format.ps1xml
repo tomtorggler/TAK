@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Configuration>
+  <ViewDefinitions>
+    <View>
+      <Name>System.TAK.SfBDiscover</Name>
+      <ViewSelectedBy>
+        <TypeName>System.TAK.SfBDiscover</TypeName>
+      </ViewSelectedBy>
+      <ListControl>
+        <ListEntries>
+          <ListEntry>
+            <ListItems>
+              <ListItem>
+                <PropertyName>self</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>user</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>xframe</PropertyName>
+              </ListItem>
+            </ListItems>
+          </ListEntry>
+        </ListEntries>
+      </ListControl>
+    </View>
+  </ViewDefinitions>
+</Configuration>
