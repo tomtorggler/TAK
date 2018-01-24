@@ -9,7 +9,6 @@ hosts:
 install: 
   - cinst -y pester
   - ps: try { Find-Package -Name zzzzzzzzzzzzz -Force -ForceBootstrap -ErrorAction Stop; } catch { Write-Warning -Message 'Finished bootstrap.'; };
-build_script: ""
 build: off
 test_script:
     - ps: |
