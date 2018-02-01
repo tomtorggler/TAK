@@ -584,7 +584,7 @@ function Connect-Exchange
     try {
         Write-Verbose "Trying to connect to $($params.ConnectionUri)"
         $sExch = New-PSSession @params -ErrorAction Stop -ErrorVariable ExchangeSessionError
-	    Import-PSSession $sExch
+	    Import-Module (Import-PSSession $sExch) -Global
     } catch {
         Write-Warning "Could not connect to Exchange $($ExchangeSessionError.ErrorRecord)"
     }
