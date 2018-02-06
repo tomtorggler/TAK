@@ -895,6 +895,46 @@ function Update-FileWriteTime {
     }
 }
 
+function Get-Hash {
+    <#
+    .Synopsis
+       Get hash for a string.
+    .DESCRIPTION
+       This function uses various various crypto service providers to get the hash value for a given input string.
+    .EXAMPLE
+       Get-Hash "Hello World!"
+
+       This example returns the MD5 hash of "Hello World!".
+    .EXAMPLE
+       Get-Hash "Hello World!" -Algorithm Sha256
+
+       This example gets the SHA256 hash of "Hello World!".
+    #>
+    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/get-hash/')]
+    param (
+        [Parameter(Mandatory=$true,
+            Position=0,
+            ValueFromPipeline=$True)]
+        [string]
+        $String,
+        [Parameter(Mandatory=$false,
+            Position=1)]
+        [ValidateSet('MD5','SHA1','SHA256','SHA512')]
+        $Algorithm
+    )
+    # define Variable for crypto provider and string builder
+    switch ($Algorithm) {
+        "SHA1"{$cryptoProvider = New-Object System.Security.Cryptography.SHA1CryptoServiceProvider}
+        "SHA256"{$cryptoProvider = New-Object System.Security.Cryptography.SHA256CryptoServiceProvider}
+        "SHA512"{$cryptoProvider = New-Object System.Security.Cryptography.SHA512CryptoServiceProvider}
+        Default{$cryptoProvider = New-Object System.Security.Cryptography.MD5CryptoServiceProvider}
+    }
+    $stringBuilder = New-Object System.Text.StringBuilder
+    foreach ($byte in $cryptoProvider.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($String))){
+        $null = $stringBuilder.Append($byte.ToString("X2")) 
+    }        
+    Write-Output ($stringBuilder.ToString().ToLower())
+}
 
 #endregion Tools
 

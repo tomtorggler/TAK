@@ -146,4 +146,15 @@ Describe "Test Touch" {
     }
 }
 
+Describe "Test Get-Hash" {
+    Context "Test Algorithms" {
+        It "MD5" {
+            Get-Hash "Hello World!" | Should Be "ed076287532e86365e841e92bfc50d8c"
+        }
+        It "SHA256" {
+            Get-Hash "Hello World!" -Algorithm Sha256 | Should Be "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069"
+        }
+    }
+}
+
 Remove-Module Tak
