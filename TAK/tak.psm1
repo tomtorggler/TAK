@@ -366,10 +366,96 @@ function Test-SfBDiscover {
         "xframe" = $webRequest._links.xframe.href
     }
     # Create a custom object and add a custom TypeName for formatting before writing to pipeline
-    Write-Output (New-Object -TypeName psobject -Property $out | Add-Member -TypeName 'System.TAK.SfBDiscover' -PassThru) 
+    Write-Output (New-Object -TypeName psobject -Property $out | Add-Member -TypeName 'System.TAK.ExchangeAutoDiscover' -PassThru) 
 }
 
 #endregion Test Lync deployment
+
+#region Test ADFS
+
+function Test-FederationService {
+    <#
+    .Synopsis
+       Test the Lyncdiscover service for Skype for Business/Lync deployments
+    .DESCRIPTION
+       This function uses Invoke-RestMethod to test if the Lyncdiscover service is responding for a given domain.
+    .EXAMPLE
+       Test-LyncDiscover -SipDomain uclab.eu -Http
+       This example gets Lyncdiscover information over http for the domain uclab.eu
+    #>
+
+    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/test-lyncdiscover/')]
+    param(
+        # Specifies the name of the federation server 
+        [Parameter(Mandatory=$true)]
+        [validateLength(3,255)]
+        [validatepattern("\w\.\w")]
+        [string]
+        [Alias("Server")]
+        $ComputerName
+    )
+
+    $uri = "https://$Domain/FederationMetadata/2007-06/FederationMetadata.xml"
+    # "adfs/ls/idpinitiatedsignon.htm"
+    try {
+        $webRequest = Invoke-RestMethod -Uri $uri -ErrorAction Stop
+        Write-Verbose $webRequest
+    } catch {
+        Write-Warning "Could not connect to $uri error $_"
+        return
+    }
+    $out = [ordered]@{
+        "entityID" = $webRequest.entitydescriptor.entityID
+        "xmlns" = $webRequest.entitydescriptor.xmlns
+        "Roles" = @{
+            "type" = $webRequest.entitydescriptor.RoleDescriptor.type
+            "ServiceDisplayName" = $webRequest.entitydescriptor.RoleDescriptor.ServiceDisplayName
+        }
+    }
+    # Create a custom object and add a custom TypeName for formatting before writing to pipeline
+    Write-Output (New-Object -TypeName psobject -Property $out) 
+}
+
+
+<#
+ID               : _4a6bab79-3948-48f2-956d-54482d42778a
+entityID         : http://fs.zeb.de/adfs/services/trust
+xmlns            : urn:oasis:names:tc:SAML:2.0:metadata
+Signature        : Signature
+RoleDescriptor   : {RoleDescriptor, RoleDescriptor}
+SPSSODescriptor  : SPSSODescriptor
+IDPSSODescriptor : IDPSSODescriptor
+
+
+type                       : fed:ApplicationServiceType
+protocolSupportEnumeration : http://docs.oasis-open.org/ws-sx/ws-trust/200512 http://schemas.xmlsoap.org/ws/2005/02/trust
+                             http://docs.oasis-open.org/wsfed/federation/200706
+ServiceDisplayName         : zeb.rolfes.schierenbeck.associates
+xsi                        : http://www.w3.org/2001/XMLSchema-instance
+fed                        : http://docs.oasis-open.org/wsfed/federation/200706
+KeyDescriptor              : KeyDescriptor
+ClaimTypesRequested        : ClaimTypesRequested
+TargetScopes               : TargetScopes
+ApplicationServiceEndpoint : ApplicationServiceEndpoint
+PassiveRequestorEndpoint   : PassiveRequestorEndpoint
+
+type                         : fed:SecurityTokenServiceType
+protocolSupportEnumeration   : http://docs.oasis-open.org/ws-sx/ws-trust/200512 http://schemas.xmlsoap.org/ws/2005/02/trust
+                               http://docs.oasis-open.org/wsfed/federation/200706
+ServiceDisplayName           : zeb.rolfes.schierenbeck.associates
+xsi                          : http://www.w3.org/2001/XMLSchema-instance
+fed                          : http://docs.oasis-open.org/wsfed/federation/200706
+KeyDescriptor                : KeyDescriptor
+TokenTypesOffered            : TokenTypesOffered
+ClaimTypesOffered            : ClaimTypesOffered
+SecurityTokenServiceEndpoint : SecurityTokenServiceEndpoint
+PassiveRequestorEndpoint     : PassiveRequestorEndpoint
+
+
+#>
+
+
+#endregion Test ADFS
 
 #region EtcHosts
 function Show-EtcHosts {

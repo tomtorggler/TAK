@@ -8,3 +8,15 @@ I'm using appveyor.com to automatically run tests and, upon success, deploy the 
 
 # Install
 This module can be installed from the PowerShell Gallery, using: `Install-Module -Name TAK `
+
+## Populate FunctionsToExport
+
+The following snippet could be used to update the modules manifest file.
+
+```powershell
+Import-Module .\Git\TAK\TAK\tak.psm1
+Import-Module .\Git\TAK\TAK\tak.exchange.psm1
+$fn = Get-Command -Module tak | Where-Object CommandType -eq function | Where-Object HelpUri | Select-Object -ExpandProperty name
+$fn += Get-Command -Module tak.exchange | Where-Object CommandType -eq function | Where-Object HelpUri | Select-Object -ExpandProperty name
+"@("+($fn -join ",")+")"
+```
