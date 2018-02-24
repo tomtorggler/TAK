@@ -44,7 +44,7 @@ function Test-TLSConnection {
 
         # Specifies a path to a file (.cer) where the certificate should be saved if the SaveCert switch parameter is used
         [Parameter(Mandatory=$false,
-                    Position=2)]
+                    Position=3)]
         [System.IO.FileInfo]
         $FilePath = "$env:TEMP\$computername.cer",
 
