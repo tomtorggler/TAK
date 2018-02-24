@@ -24,30 +24,5 @@
         </ListEntries>
       </ListControl>
     </View>
-    <!-- 
-    <View>
-      <Name>System.TAK.ExchangeAutoDiscover</Name>
-      <ViewSelectedBy>
-        <TypeName>System.TAK.ExchangeAutoDiscover</TypeName>
-      </ViewSelectedBy>
-      <ListControl>
-        <ListEntries>
-          <ListEntry>
-            <ListItems>
-              <ListItem>
-                <PropertyName>autodiscover</PropertyName>
-              </ListItem>
-              <ListItem>
-                <PropertyName>o365.Account</PropertyName>
-              </ListItem>
-              <ListItem>
-                <PropertyName>xframe</PropertyName>
-              </ListItem>
-            </ListItems>
-          </ListEntry>
-        </ListEntries>
-      </ListControl>
-    </View>
-    -->
   </ViewDefinitions>
 </Configuration>

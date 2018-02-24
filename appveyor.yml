@@ -1,4 +1,4 @@
-version: 1.0.2.{build}
+version: 1.1.0.{build}
 os: WMF 5
 environment:
   psgkey:
@@ -13,7 +13,7 @@ build_script:
   - ps: |
       Install-PackageProvider -Name NuGet -Force 
       $manifest = Join-Path -Path $pwd -ChildPath "TAK\tak.psd1"
-      (Get-Content $manifest -Raw) -Replace("1\.0\.2\.\d{1}", $env:APPVEYOR_BUILD_VERSION) | Out-File $manifest
+      (Get-Content $manifest -Raw) -Replace("1\.1\.0\.\d{1}", $env:APPVEYOR_BUILD_VERSION) | Out-File $manifest
 test_script:
   - ps: |
       $testResultsFile = ".\TestsResults.xml"

@@ -2,21 +2,25 @@
 function Test-TLSConnection {
     <#
     .Synopsis
-       Test if TLS Connection can be established.
+       Test if a TLS Connection can be established.
     .DESCRIPTION
        This function uses System.Net.Sockets.Tcpclient and System.Net.Security.SslStream to connect to a ComputerName and
        authenticate via TLS. This is useful to check if a TLS connection can be established and if the certificate used on
        the remote computer is trusted on the local machine.
        If the connection can be established, the certificate's properties will be output as custom object.
        Optionally the certificate can be downloaded using the -SaveCert switch.
+       The Protocol parameter can be used to specifiy which SslProtocol is used to perform the test. The CheckCertRevocationStatus parameter
+       can be used to disable revocation checks for the remote certificate.
     .EXAMPLE
        Test-TlsConnection -ComputerName www.ntsystems.it
+       
        This example connects to www.ntsystems.it on port 443 (default) and outputs the certificate's properties.
     .EXAMPLE
-       Test-TlsConnection -ComputerName sipdir.online.lync.com -Port 5061 -SaveCert
-       This example connects to sipdir.online.lync.com on port 5061 and saves the certificate to the temp folder.
+       Test-TlsConnection -ComputerName sipdir.online.lync.com -Port 5061 -Protocol Tls12 -SaveCert
+
+       This example connects to sipdir.online.lync.com on port 5061 using TLS 1.2 and saves the certificate to the temp folder.
     #>
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/test-tlsconnection/')]
+    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/Test-TLSConnection/')]
     [Alias('ttls')]
     [OutputType([psobject],[bool])]
     param (
@@ -44,6 +48,17 @@ function Test-TLSConnection {
         [System.IO.FileInfo]
         $FilePath = "$env:TEMP\$computername.cer",
 
+        [Parameter(Mandatory=$false,
+                    Position=2)]
+        [ValidateNotNullOrEmpty()]
+        [ValidateSet('Default','Ssl2','Ssl3','Tls','Tls11','Tls12')]
+        [System.Security.Authentication.SslProtocols[]]
+        $Protocol = 'Default',
+
+        # Check revocation information for remote certificate. Default is true.
+        [Parameter(Mandatory=$false)]
+        [bool]$CheckCertRevocationStatus = $true,
+
         # Saves the remote certificate to a file, the path can be specified using the FilePath parameter
         [switch]
         $SaveCert,
@@ -53,81 +68,89 @@ function Test-TLSConnection {
         $Silent
     )
 
-    if($PSVersionTable.PSEdition -eq "Core") {
-        Write-Verbose "PSEdition is $($PSVersionTable.PSEdition)"
+    begin { }
 
-        if (Test-Path (which openssl)) {
-            Write-Verbose "Found openssl at $(which openssl)"
+    process {
 
-            Start-Process -FilePath openssl -ArgumentList "s_client -connect $(-join ($ComputerName,":",$Port))" -RedirectStandardOutput /Users/ttor/tmpcert123
-            $certificate = Get-Content -Path /Users/ttor/tmpcert123
-            $certificateX509 = New-Object system.security.cryptography.x509certificates.x509certificate2($certificate)
-            $certificateX509
-
-        } else {
-            Write-Warning "Could not find openssl."
-        }
-
-    } else {
-        Write-Verbose "PSEdtion is $($PSVersionTable.PSEdition)"
-
-        try {
-            $TCPConnection = New-Object System.Net.Sockets.Tcpclient($ComputerName, $Port)
-
-            Write-Verbose "TCP connection has succeeded"
-
-            $TCPStream     = $TCPConnection.GetStream()
-
-            try {
-                $SSLStream = New-Object System.Net.Security.SslStream($TCPStream)
-                Write-Verbose "SSL connection has succeeded"
-
-                try {
-                    $SSLStream.AuthenticateAsClient($ComputerName)
-                    Write-Verbose "SSL authentication has succeeded"
-                } catch {
-                    Write-Warning "There's a problem with SSL authentication to $ComputerName `n$_"
-                    return $false
-                }
-
-                $certificate = $SSLStream.get_remotecertificate()
+        if($PSVersionTable.PSEdition -eq "Core") {
+            Write-Verbose "PSEdition is $($PSVersionTable.PSEdition)"
+    
+            if (Test-Path (which openssl)) {
+                Write-Verbose "Found openssl at $(which openssl)"
+    
+                Start-Process -FilePath openssl -ArgumentList "s_client -connect $(-join ($ComputerName,":",$Port))" -RedirectStandardOutput /Users/ttor/tmpcert123
+                $certificate = Get-Content -Path /Users/ttor/tmpcert123
                 $certificateX509 = New-Object system.security.cryptography.x509certificates.x509certificate2($certificate)
-                $SANextensions = New-Object system.security.cryptography.x509certificates.x509Certificate2Collection($certificateX509)
-                $SANextensions = $SANextensions.Extensions | Where-Object {$_.Oid.FriendlyName -eq "subject alternative name"}
-
-                $data = [ordered]@{
-                    'ComputerName'=$ComputerName;
-                    'Port'=$Port;
-                    'Issuer'=$SSLStream.RemoteCertificate.Issuer;
-                    'Subject'=$SSLStream.RemoteCertificate.Subject;
-                    'SerialNumber'=$SSLStream.RemoteCertificate.GetSerialNumberString();
-                    'ValidTo'=$SSLStream.RemoteCertificate.GetExpirationDateString();
-                    'SAN'=$SANextensions.Format(1);
-                }
-
-                if($Silent) {
-                    Write-Output $true
-                } else {
-                    Write-Output (New-Object -TypeName PSObject -Property $Data)
-                }
-
-                if ($SaveCert) {
-                    Write-Host "Saving cert to $FilePath" -ForegroundColor Yellow
-                    [system.io.file]::WriteAllBytes($FilePath,$certificateX509.Export("cer"))
-                }
-
-            } catch {
-                Write-Warning "$ComputerName doesn't support SSL connections at TCP port $Port `n$_"
+                $certificateX509
+    
+            } else {
+                Write-Warning "Could not find openssl."
             }
-
-        } catch {
-
-            $exception = New-Object system.net.sockets.socketexception
-            $errorcode = $exception.ErrorCode
-
-            Write-Warning "TCP connection to $ComputerName with IP $(([net.dns]::GetHostByName($ComputerName)).addresslist.ipaddresstostring) failed, error code:$errorcode"
-            Write-Warning "Error details: $exception"
+    
+        } else {
+            Write-Verbose "PSEdtion is $($PSVersionTable.PSEdition)"
+    
+            try {
+                $TCPConnection = New-Object System.Net.Sockets.Tcpclient($ComputerName, $Port)
+                Write-Verbose "TCP connection has succeeded"
+                $TCPStream     = $TCPConnection.GetStream()
+                try {
+                    $SSLStream = New-Object System.Net.Security.SslStream($TCPStream)
+                    Write-Verbose "SSL connection has succeeded with $($SSLStream.SslProtocol)"
+                    try {
+                        # AuthenticateAsClient (string targetHost, X509CertificateCollection clientCertificates, SslProtocols enabledSslProtocols, bool checkCertificateRevocation)
+                        $SSLStream.AuthenticateAsClient($ComputerName,$null,$Protocol,$CheckCertRevocationStatus)
+                        Write-Verbose "SSL authentication has succeeded"
+                    } catch {
+                        Write-Warning "There's a problem with SSL authentication to $ComputerName `n$_"
+                        return $false
+                    }
+                    $certificate = $SSLStream.get_remotecertificate()
+                    $certificateX509 = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($certificate)
+                    $SANextensions = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection($certificateX509)
+                    $SANextensions = $SANextensions.Extensions | Where-Object {$_.Oid.FriendlyName -eq "subject alternative name"}
+    
+                    $data = [ordered]@{
+                        'ComputerName' = $ComputerName;
+                        'Port' = $Port;
+                        'Protocol' = $SSLStream.SslProtocol;
+                        'CheckRevocation' = $SSLStream.CheckCertRevocationStatus;
+                        'Issuer' = $SSLStream.RemoteCertificate.Issuer;
+                        'Subject' = $SSLStream.RemoteCertificate.Subject;
+                        'SerialNumber' = $SSLStream.RemoteCertificate.GetSerialNumberString();
+                        'ValidTo' = $SSLStream.RemoteCertificate.GetExpirationDateString();
+                        'SAN' = $SANextensions.Format(1);
+                    }
+    
+                    if($Silent) {
+                        Write-Output $true
+                    } else {
+                        Write-Output (New-Object -TypeName PSObject -Property $Data)
+                    }
+                    if ($SaveCert) {
+                        Write-Host "Saving cert to $FilePath" -ForegroundColor Yellow
+                        [system.io.file]::WriteAllBytes($FilePath,$certificateX509.Export("cer"))
+                    }
+    
+                } catch {
+                    Write-Warning "$ComputerName doesn't support SSL connections at TCP port $Port `n$_"
+                }
+    
+            } catch {
+                $exception = New-Object System.Net.Sockets.SocketException
+                $errorcode = $exception.ErrorCode
+                Write-Warning "TCP connection to $ComputerName with IP $(([net.dns]::GetHostByName($ComputerName)).addresslist.ipaddresstostring) failed, error code:$errorcode"
+                Write-Warning "Error details: $exception"
+            }
         }
+    } # process
+
+    end {
+        # cleanup
+        Write-Verbose "Cleanup sessions"
+        $SSLStream.Dispose()
+        $TCPStream.Dispose()
+        $TCPConnection.Dispose()
     }
 }
 
@@ -200,7 +223,7 @@ function Test-SfBDNS {
        This example queries DNS records for the domain uclab.eu
     #>
 
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/test-lyncdns/')]
+    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/Test-SfBDNS/')]
 
     param(
         # Specifies the DNS domain name to test
@@ -318,7 +341,7 @@ function Test-SfBDiscover {
        This example gets Lyncdiscover information over http for the domain uclab.eu
     #>
 
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/test-lyncdiscover/')]
+    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/Test-SfBDiscover/')]
     param(
         # Specifies a DNS domain name to test
         [Parameter(Mandatory=$true)]
@@ -333,7 +356,12 @@ function Test-SfBDiscover {
 
         # Use internal name (lyncdiscoverinternl) instead of the external one (lyncdiscover)
         [switch]
-        $internal
+        $internal,
+
+        # Test against Office 365 endpoints
+        [switch]
+        $Online
+
     )
 
     if ($MyInvocation.InvocationName -ne $MyInvocation.MyCommand) {
@@ -353,6 +381,11 @@ function Test-SfBDiscover {
     }
 
     $uri = $uriPrefix + $uriHost + "." + $SIPDomain
+
+    if($Online) {
+        $uri = "https://webdir.online.lync.com/Autodiscover/AutodiscoverService.svc/root?originalDomain=$SipDomain"
+    }
+
     try {
         $webRequest = Invoke-RestMethod -Uri $uri -ErrorAction Stop
         Write-Verbose $webRequest
@@ -366,96 +399,10 @@ function Test-SfBDiscover {
         "xframe" = $webRequest._links.xframe.href
     }
     # Create a custom object and add a custom TypeName for formatting before writing to pipeline
-    Write-Output (New-Object -TypeName psobject -Property $out | Add-Member -TypeName 'System.TAK.ExchangeAutoDiscover' -PassThru) 
+    Write-Output (New-Object -TypeName psobject -Property $out | Add-Member -TypeName 'System.TAK.SFBDiscover' -PassThru) 
 }
 
 #endregion Test Lync deployment
-
-#region Test ADFS
-
-function Test-FederationService {
-    <#
-    .Synopsis
-       Test the Lyncdiscover service for Skype for Business/Lync deployments
-    .DESCRIPTION
-       This function uses Invoke-RestMethod to test if the Lyncdiscover service is responding for a given domain.
-    .EXAMPLE
-       Test-LyncDiscover -SipDomain uclab.eu -Http
-       This example gets Lyncdiscover information over http for the domain uclab.eu
-    #>
-
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/test-lyncdiscover/')]
-    param(
-        # Specifies the name of the federation server 
-        [Parameter(Mandatory=$true)]
-        [validateLength(3,255)]
-        [validatepattern("\w\.\w")]
-        [string]
-        [Alias("Server")]
-        $ComputerName
-    )
-
-    $uri = "https://$Domain/FederationMetadata/2007-06/FederationMetadata.xml"
-    # "adfs/ls/idpinitiatedsignon.htm"
-    try {
-        $webRequest = Invoke-RestMethod -Uri $uri -ErrorAction Stop
-        Write-Verbose $webRequest
-    } catch {
-        Write-Warning "Could not connect to $uri error $_"
-        return
-    }
-    $out = [ordered]@{
-        "entityID" = $webRequest.entitydescriptor.entityID
-        "xmlns" = $webRequest.entitydescriptor.xmlns
-        "Roles" = @{
-            "type" = $webRequest.entitydescriptor.RoleDescriptor.type
-            "ServiceDisplayName" = $webRequest.entitydescriptor.RoleDescriptor.ServiceDisplayName
-        }
-    }
-    # Create a custom object and add a custom TypeName for formatting before writing to pipeline
-    Write-Output (New-Object -TypeName psobject -Property $out) 
-}
-
-
-<#
-ID               : _4a6bab79-3948-48f2-956d-54482d42778a
-entityID         : http://fs.zeb.de/adfs/services/trust
-xmlns            : urn:oasis:names:tc:SAML:2.0:metadata
-Signature        : Signature
-RoleDescriptor   : {RoleDescriptor, RoleDescriptor}
-SPSSODescriptor  : SPSSODescriptor
-IDPSSODescriptor : IDPSSODescriptor
-
-
-type                       : fed:ApplicationServiceType
-protocolSupportEnumeration : http://docs.oasis-open.org/ws-sx/ws-trust/200512 http://schemas.xmlsoap.org/ws/2005/02/trust
-                             http://docs.oasis-open.org/wsfed/federation/200706
-ServiceDisplayName         : zeb.rolfes.schierenbeck.associates
-xsi                        : http://www.w3.org/2001/XMLSchema-instance
-fed                        : http://docs.oasis-open.org/wsfed/federation/200706
-KeyDescriptor              : KeyDescriptor
-ClaimTypesRequested        : ClaimTypesRequested
-TargetScopes               : TargetScopes
-ApplicationServiceEndpoint : ApplicationServiceEndpoint
-PassiveRequestorEndpoint   : PassiveRequestorEndpoint
-
-type                         : fed:SecurityTokenServiceType
-protocolSupportEnumeration   : http://docs.oasis-open.org/ws-sx/ws-trust/200512 http://schemas.xmlsoap.org/ws/2005/02/trust
-                               http://docs.oasis-open.org/wsfed/federation/200706
-ServiceDisplayName           : zeb.rolfes.schierenbeck.associates
-xsi                          : http://www.w3.org/2001/XMLSchema-instance
-fed                          : http://docs.oasis-open.org/wsfed/federation/200706
-KeyDescriptor                : KeyDescriptor
-TokenTypesOffered            : TokenTypesOffered
-ClaimTypesOffered            : ClaimTypesOffered
-SecurityTokenServiceEndpoint : SecurityTokenServiceEndpoint
-PassiveRequestorEndpoint     : PassiveRequestorEndpoint
-
-
-#>
-
-
-#endregion Test ADFS
 
 #region EtcHosts
 function Show-EtcHosts {
@@ -466,7 +413,7 @@ function Show-EtcHosts {
        This funtion gets the content of the hosts file, parses the lines and outputs
        a custom object with HostName and IPAddress properties.
     #>
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/show-etchosts/')]
+    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/Show-EtcHosts/')]
     param()
     # Alias/OutputType don't seem to work on Core?
     #[Alias('shosts')]
@@ -670,7 +617,7 @@ function Connect-Exchange
     try {
         Write-Verbose "Trying to connect to $($params.ConnectionUri)"
         $sExch = New-PSSession @params -ErrorAction Stop -ErrorVariable ExchangeSessionError
-	    Import-Module (Import-PSSession $sExch) -Global
+	    Import-Module (Import-PSSession $sExch -AllowClobber) -Global
     } catch {
         Write-Warning "Could not connect to Exchange $($ExchangeSessionError.ErrorRecord)"
     }
@@ -683,11 +630,24 @@ function Connect-SfB
     (
         # Specifies the ServerName that the session will be connected to
         [Parameter(Mandatory=$true,
+                   ParameterSetName = "Server",
                    ValueFromPipelineByPropertyName=$true,
                    Position=0)]
         $Server,
 
+        # Specify the Online switch to connect to SfB Online using the SkypeOnlineConnector module
+        [Parameter(ParameterSetName="Online")]
+        [switch]
+        $Online,
+
+        # Specify the admin doamin to connect to (OverrideAdminDomain parameter)
+        [Parameter(ParameterSetName="Online")]
+        [string]
+        $AdminDomain,
+
         # Credential used for connection; if not specified, the currently logged on user will be used
+        [Parameter(Position=0,
+            ParameterSetName="Server")]
         [pscredential]
         $Credential
     )
@@ -712,9 +672,21 @@ function Connect-SfB
         break
     }
     try {
-        $sLync = New-PSSession @params -ErrorAction Stop -ErrorVariable LyncSessionError
-	    Import-PSSession $sLync
-    } catch {
+        if($Online -and (Get-Command -Name New-CsOnlineSession -ErrorAction SilentlyContinue)) {
+
+            if($AdminDomain -notmatch ".onmicrosoft.com") {
+                $AdminDomain = -join($AdminDomain,".onmicrosoft.com")
+            }
+
+            Write-Verbose "Using New-CsOnlineSession"
+            $sLync = New-CsOnlineSession -OverrideAdminDomain $AdminDomain -ErrorAction Stop -ErrorVariable LyncSessionError        
+        } else {
+            Write-Verbose "Trying to connect to ($$params.ConnectionUri)"
+            $sLync = New-PSSession @params -ErrorAction Stop -ErrorVariable LyncSessionError
+        } 
+        Import-Module (Import-PSSession $sLync -AllowClobber) -Global
+    }
+    catch {
         Write-Warning "Could not connect to Exchange $($LyncSessionError.ErrorRecord)"
     }
 }
@@ -1020,6 +992,41 @@ function Get-Hash {
         $null = $stringBuilder.Append($byte.ToString("X2")) 
     }        
     Write-Output ($stringBuilder.ToString().ToLower())
+}
+function Show-WlanProfile {
+    <#
+    .Synopsis
+       Get wlan pre-shared key.
+    .DESCRIPTION
+       This function invokes the netsh tool to get the pre-shared key for a given wireless lan profile.
+    .EXAMPLE
+       Show-WlanProfile "my_net"
+
+       This example shows the key for the wlan profile "my_net"
+    .EXAMPLE
+       Get-WlanProfile | Show-WlanProfile
+
+       This example shows the keys for all known wlan profiles on the system.
+    #>
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            ValueFromPipeline=$true
+        )]
+        $Name
+    )
+    process {
+        $x = Invoke-Expression "netsh wlan show profile $name key=clear" 
+        $x | Select-String -Pattern "SSID Name|Key Content"
+    }
+}
+
+function Get-WlanProfile {
+    # quick hack to get all known wlan profiles
+    $x = Invoke-Expression "netsh wlan show profile"
+    $x = $x | Select-String -Pattern "All User Pr"
+    $y = $x -replace("All User Profile     :","Name=") | ConvertFrom-StringData
+    $y | Select-Object -ExpandProperty Values
 }
 
 #endregion Tools
