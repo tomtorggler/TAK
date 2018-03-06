@@ -180,15 +180,34 @@ function Get-MxRecord {
     param (
         [Parameter(ValueFromPipeline=$true)]
         [string]
-        $Domain
+        $Domain,
+        [System.Net.IPAddress]
+        $Server
     )
+    begin {
+        $param = @{
+            ErrorAction="SilentlyContinue"
+            QuickTimeout=$True
+        }
+        if($Server) {
+            $param.Add("Server",$Server)
+        }
+    }
     process {
         $mx = Resolve-DnsName -Name $domain -Type MX -ErrorAction SilentlyContinue | Where-Object Type -eq "MX"
         if ($mx) {
-            $mx | Select-Object -Property NameExchange,Preference,@{
-                Name = "IPAddress" 
-                Expression = { 
-                    Resolve-DnsName -Name $_.NameExchange -Type A_AAAA | Select-Object -ExpandProperty IPAddress
+            $rec = $mx | Select-Object -Property NameExchange,Preference,@{
+                    Name = "IPAddress" 
+                    Expression = {
+                        Resolve-DnsName -Name $_.NameExchange -Type A_AAAA @param | Select-Object -ExpandProperty IPAddress    
+                    }
+                }
+            $rec | Select-Object -Property *,@{
+                Name = "PTR"
+                Expression = {
+                    $_.IpAddress | ForEach-Object {
+                        Resolve-DnsName -Name $_ -Type PTR @param | Select-Object -ExpandProperty NameHost    
+                    }
                 }
             }
         }
@@ -199,7 +218,6 @@ function Get-MxRecord {
 
 
 #region Test ADFS
-
 function Test-FederationService {
     <#
     .Synopsis
