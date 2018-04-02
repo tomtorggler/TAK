@@ -24,5 +24,41 @@
         </ListEntries>
       </ListControl>
     </View>
+  <View>
+    <Name>System.TAK.WlanProfile</Name>
+    <ViewSelectedBy>
+      <TypeName>System.TAK.WlanProfile</TypeName>
+    </ViewSelectedBy>
+    <TableControl>
+      <TableHeaders>
+        <TableColumnHeader>
+          <Width>32</Width>
+        </TableColumnHeader>
+        <TableColumnHeader>
+          <Width>32</Width>
+        </TableColumnHeader>
+        <TableColumnHeader/>
+      </TableHeaders>
+      <TableRowEntries>
+        <TableRowEntry>
+          <TableColumnItems>
+            <TableColumnItem>
+              <PropertyName>SSID</PropertyName>
+            </TableColumnItem>
+            <TableColumnItem>
+              <PropertyName>Security</PropertyName>
+            </TableColumnItem>
+            <TableColumnItem>
+              <PropertyName>Key</PropertyName>
+            </TableColumnItem>
+          </TableColumnItems>
+        </TableRowEntry>
+      </TableRowEntries>
+    </TableControl>
+  </View>
   </ViewDefinitions>
 </Configuration>
+
+
+
+

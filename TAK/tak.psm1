@@ -981,22 +981,22 @@ function Update-FileWriteTime {
     }
 }
 
-function Get-Hash {
+function Get-TakHash {
     <#
     .Synopsis
        Get hash for a string.
     .DESCRIPTION
        This function uses various various crypto service providers to get the hash value for a given input string.
     .EXAMPLE
-       Get-Hash "Hello World!"
+       Get-TakHash "Hello World!"
 
        This example returns the MD5 hash of "Hello World!".
     .EXAMPLE
-       Get-Hash "Hello World!" -Algorithm Sha256
+       Get-TakHash "Hello World!" -Algorithm Sha256
 
        This example gets the SHA256 hash of "Hello World!".
     #>
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/get-hash/')]
+    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/get-takhash/')]
     param (
         [Parameter(Mandatory=$true,
             Position=0,
@@ -1036,18 +1036,27 @@ function Show-WlanProfile {
 
        This example shows the keys for all known wlan profiles on the system.
     #>
-    [cmdletbinding()]
+    [CmdletBinding()]
     param(
-        [Parameter(
-            ValueFromPipeline=$true
-        )]
+        [Parameter(ValueFromPipeline=$true)]
+        [string]
         $Name
     )
     process {
-        $x = Invoke-Expression "netsh wlan show profile $name key=clear" 
-        $x | Select-String -Pattern "SSID Name|Key Content"
+        $NetSh = Invoke-Expression "netsh wlan show profile $name key=clear" 
+        Write-Verbose "Show info for $name"
+        $StringData = ($NetSh | Select-String -Pattern "SSID Name|Key Content|Authentication") -replace(":","=") -replace(" ","") -replace('"',"") | Select-Object -Unique | ConvertFrom-StringData 
+        if($StringData.SSIDName) {
+            New-Object -TypeName psobject -Property ([ordered]@{
+                SSID = $StringData.SSIDName
+                Security = $StringData.Authentication
+                Key = $StringData.KeyContent
+            }) | Add-Member -TypeName 'System.TAK.WlanProfile' -PassThru
+        }
     }
 }
+
+
 
 function Get-WlanProfile {
     # quick hack to get all known wlan profiles

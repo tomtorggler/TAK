@@ -178,7 +178,7 @@ function Get-MxRecord {
     #>
     [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/get-mxrecord/')]
     param (
-        [Parameter(ValueFromPipeline=$true)]
+        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
         [string]
         $Domain,
         [System.Net.IPAddress]
@@ -260,3 +260,167 @@ function Test-FederationService {
     Write-Output (New-Object -TypeName psobject -Property $out) 
 }
 #endregion Test ADFS
+
+#region SPF
+function New-SPFRecord {
+    <#
+    .SYNOPSIS
+        Create SPF record for a given mail domain.
+    .DESCRIPTION
+        This function helps with creating SPF records for mail domains.
+        The SPF record should look something like this:
+
+        v=spf1 mx a ptr ip4:127.1.1.1/24 a:host.example.com include:example.com -all
+
+        More information: https://www.ietf.org/rfc/rfc4408.txt
+    .EXAMPLE
+        PS C:\> Get-AcceptedDomain | New-SPFRecord -mx -IncludeDomain spf.protection.outlook.com -IncludeIP 192.0.2.1,2001:DB8::1 -Action Fail
+
+        DomainName : uclab.eu
+        Record     : "v=spf1 mx ip4:192.0.2.1 ip6:2001:DB8::1 include:spf.protection.outlook.com -all"
+
+        The above example creates SPF records for all accepted domains in Exchange (Online).
+    .INPUTS
+        [string]
+        [AcceptedDomain]
+
+        This function accepts a string or objects with a DomainName property (such as returned by Get-AcceptedDomain) as input.
+    .OUTPUTS
+        [psobject]
+
+        This function writes a custom object to the pipeline.
+    .NOTES
+        Author: @torggler
+    #>
+    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/New-SPFRecord/')]
+    param (
+        [Parameter(ValueFromPipelineByPropertyName=$true,
+            ValueFromPipeline=$true)]
+        [string]
+        $DomainName,
+        [switch]
+        $mx,
+        [switch]
+        $a,
+        [switch]
+        $ptr,
+        [ipaddress[]]
+        $IncludeIP,
+        [string]
+        $IncludeDomain,
+        [string]
+        $IncludeHost,
+        [ValidateSet("Fail","SoftFail","Neutral")]
+        [string]
+        $Action = "Fail"
+    )   
+    process {
+        # if run without parameters, set mx to default
+        if(-not($PSBoundParameters.Count)) {
+            $PSBoundParameters.Add("mx",$true)
+            $PSBoundParameters.Add("Action","Fail")
+        }
+
+        Write-Verbose "Creating SPF for domain $DomainName"
+
+        $spfBase = "v=spf1"
+
+        switch ($PSBoundParameters.Keys) {
+            "mx" { $spfMX = "mx" }
+            "ptr" { $spfPTR = "ptr" }
+            "a" { $spfA = "a" }
+            "IncludeIP" { 
+                $i = 0 # use a little counter to avoid inserting unnecessary spaces 
+                foreach ($ip in $IncludeIP) {
+                    switch ($ip.AddressFamily) {
+                        InterNetwork { 
+                            Write-Verbose "adding ip4 $ip"
+                            if($i -eq 0) {
+                                $spfIP = "ip4:$($ip.IPAddressToString)" 
+                            } else {
+                                $spfIP += " ip4:$($ip.IPAddressToString)" 
+                            }
+                        }
+                        InterNetworkV6 { 
+                            Write-Verbose "adding ip6 $ip"
+                            if($i -eq 0) {
+                                $spfIP = "ip6:$($ip.IPAddressToString)"
+                            } else {
+                                $spfIP += " ip6:$($ip.IPAddressToString)" 
+                            }
+                        }
+                    }
+                $i++
+                }
+            }
+            "IncludeDomain" {
+                Write-Verbose "adding include:$IncludeDomain"
+                $spfDomain = "include:$IncludeDomain"
+            }
+            "IncludeHost" {
+                Write-Verbose "adding include:$IncludeHost"
+                $spfHost = "a:$IncludeHost"
+            }
+            "Action" {
+                switch($Action) {
+                    "Fail" { 
+                        Write-Verbose "Setting action to Fail"
+                        $spfAction = "-all" 
+                    }
+                    "SoftFail" {
+                        Write-Verbose "Setting action to SoftFail"
+                        $spfAction = "~all"
+                    }
+                    "Neutral" { 
+                        Write-Verbose "Setting action to Neutral"
+                        $spfAction = "?all" 
+                    }
+                }
+            }
+        }
+        $Record = $spfBase,$spfMX,$spfA,$spfPTR,$spfIP,$spfDomain,$spfHost,$spfAction | Where-Object {$_}
+        New-Object -TypeName psobject -Property ([ordered]@{
+            DomainName = $DomainName
+            Record = $Record -join " "
+        })        
+    }
+}
+function Get-SPFRecord {
+    <#
+    .Synopsis
+       Get SPF Record for a domain.
+    .DESCRIPTION
+       This function uses Resolve-DNSName to get the SPF Record for a given domain. Objects with a DomainName property,
+       such as returned by Get-AcceptedDomain, can be piped to this function.
+    .EXAMPLE
+       Get-AcceptedDomain | Get-SPFRecord
+
+       This example gets SPF records for all domains returned by Get-AcceptedDomain.
+    #>
+    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/Get-SPFRecord/')]
+    param (
+        [Parameter(Mandatory=$true,
+            ValueFromPipelineByPropertyName=$true,
+            ValueFromPipeline=$true)]
+        [string]
+        $DomainName,
+        [string]
+        $Server
+    )
+    process {
+        $params = @{
+            Type = "txt"
+            Name = $DomainName
+            ErrorAction = "Stop"
+        }
+        if($Server) { $params.Add("Server",$Server) }
+        try {
+            $dns = Resolve-DnsName @params | Where-Object Strings -Match "spf1"
+            $dns |Select-Object @{n="DomainName";e={$_.Name}},@{n="Record";E={$_.Strings}}
+        } catch {
+            Write-Warning $_
+        }
+    }
+}
+
+#endregion SPF
