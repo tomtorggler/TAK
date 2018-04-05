@@ -248,6 +248,11 @@ function Test-FederationService {
         Write-Warning "Could not connect to $uri error $_"
         return
     }
+
+    [byte[]]$rawData = [System.Convert]::FromBase64String($webRequest.EntityDescriptor.Signature.KeyInfo.X509Data.X509Certificate)
+    $certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+    $certificate.Import($rawData)
+    
     $out = [ordered]@{
         "entityID" = $webRequest.entitydescriptor.entityID
         "xmlns" = $webRequest.entitydescriptor.xmlns
@@ -255,11 +260,16 @@ function Test-FederationService {
             "type" = $webRequest.entitydescriptor.RoleDescriptor.type
             "ServiceDisplayName" = $webRequest.entitydescriptor.RoleDescriptor.ServiceDisplayName
         }
+        "IDPSSODescriptor" = $webRequest.EntityDescriptor.IDPSSODescriptor
+        "SPSSODescriptor" = $webRequest.EntityDescriptor.SPSSODescriptor
+        "SigningCert" = $certificate
+
     }
     # Create a custom object and add a custom TypeName for formatting before writing to pipeline
     Write-Output (New-Object -TypeName psobject -Property $out) 
 }
 #endregion Test ADFS
+
 
 #region SPF
 function New-SPFRecord {
