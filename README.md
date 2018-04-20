@@ -1,4 +1,5 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/4ihjpqd6c8f9cceq?svg=true)](https://ci.appveyor.com/project/tomtorggler/tak)
+[![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/tak.svg)](https://www.powershellgallery.com/packages/tak)
 
 # TAK
 Tom's Admin Kit - a collection of functions and snippets
@@ -20,3 +21,5 @@ $fn = Get-Command -Module tak | Where-Object CommandType -eq function | Where-Ob
 $fn += Get-Command -Module tak.exchange | Where-Object CommandType -eq function | Where-Object HelpUri | Select-Object -ExpandProperty name
 "@("+($fn -join ",")+")"
 ```
+
+TAK is released under [MIT license](https://opensource.org/licenses/MIT).
