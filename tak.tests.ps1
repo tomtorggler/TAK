@@ -102,16 +102,16 @@ Describe "Test Connection" {
     }
     Context "Test TLS Connection" {
         It "returns Certificate information" {
-            Test-TLSConnection -ComputerName www.ntsystems.it | select -ExpandProperty Subject | Should Match "cloudflaressl"
-            "www.ntsystems.it" | Test-TLSConnection | select -ExpandProperty Subject | Should Match "cloudflaressl"
+            Test-TLSConnection -Protocol Tls12 -ComputerName www.ntsystems.it | select -ExpandProperty Subject | Should Match "cloudflaressl"
+            "www.ntsystems.it" | Test-TLSConnection -Protocol Tls12 | select -ExpandProperty Subject | Should Match "cloudflaressl"
         }
         It "returns True when Silent parameter is used" {
-            Test-TLSConnection -ComputerName www.ntsystems.it -Port 443 -Silent | Should Be $true
-            "www.ntsystems.it" | Test-TLSConnection -Port 443 -Silent | Should Be $true
+            Test-TLSConnection -Protocol Tls12 -ComputerName www.ntsystems.it -Port 443 -Silent | Should Be $true
+            "www.ntsystems.it" | Test-TLSConnection -Protocol Tls12 -Port 443 -Silent | Should Be $true
         }
         It "returns False if certificate is not trusted" {
-            Test-TLSConnection -ComputerName sip.uclab.eu -Port 5061 -WarningAction SilentlyContinue | Should Be $false
-            "sip.uclab.eu" | Test-TLSConnection -Port 5061 -WarningAction SilentlyContinue | Should Be $false            
+            Test-TLSConnection -Protocol Tls12 -ComputerName sip.uclab.eu -Port 5061 -WarningAction SilentlyContinue | Should Be $false
+            "sip.uclab.eu" | Test-TLSConnection -Protocol Tls12 -Port 5061 -WarningAction SilentlyContinue | Should Be $false            
         }
     }
 }
@@ -153,6 +153,36 @@ Describe "Test Get-TakHash" {
         }
         It "SHA256" {
             Get-TakHash "Hello World!" -Algorithm Sha256 | Should Be "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069"
+        }
+    }
+}
+
+Describe "Test DNS Lookup" {
+    Context "Test Resolve-TakDns" {
+        It "Without parameters, A and AAAA records are queried" {
+            $Response = Resolve-TakDns ntsystems.it 
+            $Response.IPAddress | Should -BeOfType IPAddress
+        }
+        It "Given -Name <Name> and -Type <Type>, it returns objects with <Expected> properties" -TestCases @(
+          @{ Name = 'ntsystems.it'; Type = 'MX'; Expected = 'NameExchange' }
+          @{ Name = 'ntsystems.it'; Type = 'TXT'; Expected = 'Strings' }
+          @{ Name = '_sip._tls.ntsystems.it'; Type = 'SRV'; Expected = 'NameTarget' }
+          @{ Name = 'autodiscover.ntsystems.it'; Type = 'CName'; Expected = 'NameHost' }
+        ) {
+          param ($Name, $Type, $Expected)
+          $Responses = Resolve-TakDns -Name $Name -Type $Type 
+          $Responses.$Expected | Should -Not -BeNullOrEmpty
+        }
+    } 
+    Context "Test DNS Cmdlets" {
+        It "Get-MxRecord returns objects with a NameExchange property" {
+            (Get-MxRecord -Domain ntsystems.it).NameExchange | Should -Match "protection.outlook.com"
+        }
+        It "Get-DKIMRecord returns objects with a Record property" {
+            (Get-DKIMRecord -Domain ntsystems.it -Selector selector1).Record | Should -Match "v=dkim1"
+        }
+        It "Get-SPFRecord returns objects with a Record property" {
+            (Get-SPFRecord -Domain ntsystems.it).Record | Should -Match "v=spf1"
         }
     }
 }

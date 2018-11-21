@@ -68,7 +68,7 @@ function Get-AutodiscoverResponse {
     param(
         [string]$uri,
         [xml]$body,
-        [int]$Timeout = 2,
+        [int]$Timeout = 4,
         [pscredential]$Credential
     )
     $params = @{
@@ -161,58 +161,7 @@ function Test-ExchangeAutodiscover {
     }
 }
 
-function Get-MxRecord {
-    <#
-    .SYNOPSIS
-        Get MX Records for a domain.
-    .DESCRIPTION
-        Uses Resolve-DnsName to get MX Records, Priority and the IP Address of the records.
-    .EXAMPLE
-        PS C:\> Get-MxRecord ntsystems.it
-        
-        This example gets the MX record for the domain ntsystems.it.
-    .INPUTS
-        [string]
-    .OUTPUTS
-        [Selected.Microsoft.DnsClient.Commands.DnsRecord_MX]
-    #>
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/get-mxrecord/')]
-    param (
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
-        [string]
-        $Domain,
-        [System.Net.IPAddress]
-        $Server
-    )
-    begin {
-        $param = @{
-            ErrorAction="SilentlyContinue"
-            QuickTimeout=$True
-        }
-        if($Server) {
-            $param.Add("Server",$Server)
-        }
-    }
-    process {
-        $mx = Resolve-DnsName -Name $domain -Type MX -ErrorAction SilentlyContinue | Where-Object Type -eq "MX"
-        if ($mx) {
-            $rec = $mx | Select-Object -Property NameExchange,Preference,@{
-                    Name = "IPAddress" 
-                    Expression = {
-                        Resolve-DnsName -Name $_.NameExchange -Type A_AAAA @param | Select-Object -ExpandProperty IPAddress    
-                    }
-                }
-            $rec | Select-Object -Property *,@{
-                Name = "PTR"
-                Expression = {
-                    $_.IpAddress | ForEach-Object {
-                        Resolve-DnsName -Name $_ -Type PTR @param | Select-Object -ExpandProperty NameHost    
-                    }
-                }
-            }
-        }
-    }
-}
+
 
 #endregion 
 
@@ -221,12 +170,12 @@ function Get-MxRecord {
 function Test-FederationService {
     <#
     .Synopsis
-       Test the ADFS web service
+    Test the ADFS web service
     .DESCRIPTION
-       This function uses Invoke-RestMethod to test if the federation service metadata can be retrieved from a given server.
+    This function uses Invoke-RestMethod to test if the federation service metadata can be retrieved from a given server.
     .EXAMPLE
-       Test-FederationService -ComputerName fs.uclab.eu 
-       This example gets federation service xml information over the server fs.uclab.eu
+    Test-FederationService -ComputerName fs.uclab.eu 
+    This example gets federation service xml information over the server fs.uclab.eu
     #>
     [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/Test-FederationService/')]
     param(
@@ -395,42 +344,6 @@ function New-SPFRecord {
         })        
     }
 }
-function Get-SPFRecord {
-    <#
-    .Synopsis
-       Get SPF Record for a domain.
-    .DESCRIPTION
-       This function uses Resolve-DNSName to get the SPF Record for a given domain. Objects with a DomainName property,
-       such as returned by Get-AcceptedDomain, can be piped to this function.
-    .EXAMPLE
-       Get-AcceptedDomain | Get-SPFRecord
 
-       This example gets SPF records for all domains returned by Get-AcceptedDomain.
-    #>
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/Get-SPFRecord/')]
-    param (
-        [Parameter(Mandatory=$true,
-            ValueFromPipelineByPropertyName=$true,
-            ValueFromPipeline=$true)]
-        [string]
-        $DomainName,
-        [string]
-        $Server
-    )
-    process {
-        $params = @{
-            Type = "txt"
-            Name = $DomainName
-            ErrorAction = "Stop"
-        }
-        if($Server) { $params.Add("Server",$Server) }
-        try {
-            $dns = Resolve-DnsName @params | Where-Object Strings -Match "spf1"
-            $dns |Select-Object @{n="DomainName";e={$_.Name}},@{n="Record";E={$_.Strings}}
-        } catch {
-            Write-Warning $_
-        }
-    }
-}
 
 #endregion SPF
