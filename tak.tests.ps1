@@ -157,6 +157,7 @@ Describe "Test Get-TakHash" {
     }
 }
 
+<# 
 Describe "Test DNS Lookup" {
     Context "Test Resolve-TakDns" {
         It "Without parameters, A and AAAA records are queried" {
@@ -186,5 +187,6 @@ Describe "Test DNS Lookup" {
         }
     }
 }
+#>
 
 Remove-Module Tak
