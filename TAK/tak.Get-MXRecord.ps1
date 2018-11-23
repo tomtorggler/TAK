@@ -13,10 +13,13 @@ function Get-MxRecord {
     .OUTPUTS
         [Selected.Microsoft.DnsClient.Commands.DnsRecord_MX]
     #>
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/get-mxrecord/')]
+    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/Get-MxRecord/')]
     param (
+        # Specify the Domain name for the query.
         [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
         [string]
+
+        # Specify the DNS server to query.
         $Domain,
         [System.Net.IPAddress]
         $Server

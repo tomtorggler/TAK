@@ -18,7 +18,7 @@ function Connect-Exchange
         [Parameter(ParameterSetName="Online")]
         [switch]
         $Online,
-
+        
         # ProxyAccessType to use for the PsSession
         [Parameter()]
         [System.Management.Automation.Remoting.ProxyAccessType]
@@ -54,9 +54,14 @@ function Connect-Exchange
     }
     $ExchOption = New-PSSessionOption -ProxyAccessType $ProxyType
     try {
-        Write-Verbose "Trying to connect to $($params.ConnectionUri)"
-        $sExch = New-PSSession @params -SessionOption $ExchOption -ErrorAction Stop -ErrorVariable ExchangeSessionError
-        Import-Module (Import-PSSession $sExch -AllowClobber) -Global
+        if($online -and (Get-Command -Name New-ExoPSSession -ErrorAction SilentlyContinue)) {
+            Write-Verbose "Connecting using Modern Auth"
+            $sExch = New-ExoPSSession -PSSessionOption $ExchOption -ErrorAction Stop -ErrorVariable ExchangeSessionError
+        } else {
+            Write-Verbose "Trying to connect to $($params.ConnectionUri)"
+            $sExch = New-PSSession @params -SessionOption $ExchOption -ErrorAction Stop -ErrorVariable ExchangeSessionError
+        }
+        Import-Module (Import-PSSession $sExch -AllowClobber) -Global -WarningAction SilentlyContinue
     } catch {
         Write-Warning "Could not connect to Exchange $($ExchangeSessionError.ErrorRecord)"
     }

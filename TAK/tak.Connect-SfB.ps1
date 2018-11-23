@@ -85,7 +85,7 @@ function Connect-SfB {
             Write-Verbose "Trying to connect to $($params.ConnectionUri) with Idle timeout: $($LyncOption.IdleTimeout) and ProxyType:  $($LyncOption.ProxyAccessType)"
             $sLync = New-PSSession @params -SessionOption $LyncOption -ErrorAction Stop -ErrorVariable LyncSessionError
         } 
-        Import-Module (Import-PSSession $sLync -AllowClobber) -Global
+        Import-Module (Import-PSSession $sLync -AllowClobber) -Global -WarningAction SilentlyContinue
     }
     catch {
         Write-Warning "Could not connect to Skype for Business $($LyncSessionError.ErrorRecord)"

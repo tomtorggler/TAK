@@ -12,11 +12,14 @@ function Get-SPFRecord {
     #>
     [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/Get-SPFRecord/')]
     param (
+        # Specify the Domain name for the query.
         [Parameter(Mandatory=$true,
             ValueFromPipelineByPropertyName=$true,
             ValueFromPipeline=$true)]
         [string]
         $DomainName,
+        
+        # Specify the Domain name for the query.
         [string]
         $Server
     )
