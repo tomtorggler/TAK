@@ -32,7 +32,7 @@ function New-RgsReport {
         [switch]
         $Html
     )
-    $data = Get-CsRgsWorkflow | Where-Object Name -Match $Filter | Select-Object -Property Name,LineUri, @{
+    $data = Get-CsRgsWorkflow | Where-Object Name -Match $Filter | Select-Object -Property Name,LineUri,PrimaryUri, @{
         Name = "Queue";
         Expression = { 
             Get-CsRgsQueue -Identity $($_.DefaultAction.QueueId) | 
