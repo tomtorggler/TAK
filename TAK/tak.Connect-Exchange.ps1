@@ -11,6 +11,7 @@ function Connect-Exchange
         $Server,
 
         # Credential used for connection; if not specified, the currently logged on user will be used
+        [Parameter()]
         [pscredential]
         $Credential,
 
@@ -43,20 +44,19 @@ function Connect-Exchange
         Write-Warning "Already connected to Exchange"
         break
     }
-    if ($Online) {
-        if (-not($params.Credential)) {
-            $params.Credential = Get-Credential
-        }
-        $params.ConnectionUri = "https://outlook.office365.com/powershell-liveid/"
-        $params.Authentication = "Basic"
-        $params.Name = "ExOnline"
-        $params.Add("AllowRedirection",$true)
-    }
     $ExchOption = New-PSSessionOption -ProxyAccessType $ProxyType
     try {
         if($online -and (Get-Command -Name New-ExoPSSession -ErrorAction SilentlyContinue)) {
             Write-Verbose "Connecting using Modern Auth"
             $sExch = New-ExoPSSession -PSSessionOption $ExchOption -ErrorAction Stop -ErrorVariable ExchangeSessionError
+        } elseif ($Online) {
+            if (-not($params.Credential)) {
+                $params.Credential = Get-Credential
+            }
+            $params.ConnectionUri = "https://outlook.office365.com/powershell-liveid/"
+            $params.Authentication = "Basic"
+            $params.Name = "ExOnline"
+            $params.Add("AllowRedirection",$true)
         } else {
             Write-Verbose "Trying to connect to $($params.ConnectionUri)"
             $sExch = New-PSSession @params -SessionOption $ExchOption -ErrorAction Stop -ErrorVariable ExchangeSessionError
