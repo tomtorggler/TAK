@@ -47,7 +47,7 @@ function Get-InternetProxy {
     [CmdletBinding()]
     param()
     if ($IsLinux -or $IsMacOS) {
-        New-Object -TypeName psobject -Property @{ http_proxy = $env:http_proxy }
+        New-Object -TypeName psobject -Property @{ http_proxy = $env:http_proxy ; https_proxy = $env:https_proxy }
         if (Test-Path /etc/proxy.pac) {
             Write-Verbose "/etc/proxy.pac found."
             Get-Content /etc/proxy.pac
