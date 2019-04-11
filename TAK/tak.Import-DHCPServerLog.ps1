@@ -17,11 +17,16 @@ function Import-DhcpServerLog {
     [CmdletBinding()]
     param (
         $Path = "C:\Windows\System32\dhcp",
-        $Filter = "DhcpSrvLog*.log"
+        $Filter = "DhcpSrvLog*.log",
+        $ComputerName
     )   
     process {
+        if($ComputerName){
+            $Path = Join-Path -Path "\\$ComputerName" -ChildPath $Path.replace("C:","C$")
+        }
         $csvHeader = @('ID','Date','Time','Description','IP Address','Host Name','MAC Address','User Name','TransactionID','QResult','Probationtime','CorrelationID','Dhcid','VendorClass(Hex)','VendorClass(ASCII)','UserClass(Hex)','UserClass(ASCII)','RelayAgentInformation','DnsRegError')
-        $Logs = Get-ChildItem -Path (Join-Path -Path $Path -ChildPath $Filter)
+        Write-Verbose "Looking for files in $Path"
+        $Logs = Get-ChildItem -Path (Join-Path -Path $Path -ChildPath $Filter) -ErrorAction SilentlyContinue
         $Logs | Select-String -Pattern "\d{2}," | Select-Object -ExpandProperty Line | ConvertFrom-Csv -Header $csvHeader
     }
 }
