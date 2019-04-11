@@ -16,19 +16,26 @@ function Test-OOSFarm {
         General notes
     #>
     [CmdletBinding()]
-    param($Name)
-    $uri = "https://$name/hosting/discovery"
-    try{
+    param(
+        # Specifies the name of the OOS server/farm 
+        [Parameter(Mandatory=$true)]
+        [validateLength(3,255)]
+        [validatepattern("\w\.\w")]
+        [string]
+        [Alias("Server","Farm","Name")]
+        $ComputerName
+    )
+    $uri = "https://$ComputerName/hosting/discovery"
+    try {
         $r = Invoke-RestMethod -Uri $uri -ErrorAction Stop
-    } catch {
-        Write-Warning "Could not connect to $Name"
+    }
+    catch {
+        Write-Warning "Could not connect to $ComputerName"
     }
     if ($r) {
         New-Object -TypeName psobject -Property @{
-            Internal = $r.'wopi-discovery'.'net-zone'.where{$_.name -eq "internal-https"}.app.where{$_.name -eq "PowerPoint"}.action.where{$_.name -eq "presentservice" -and $_.ext -eq "pptx"}.urlsrc
-            External = $r.'wopi-discovery'.'net-zone'.where{$_.name -eq "external-https"}.app.where{$_.name -eq "PowerPoint"}.action.where{$_.name -eq "presentservice" -and $_.ext -eq "pptx"}.urlsrc           
+            Internal = $r.'wopi-discovery'.'net-zone'.where{ $_.name -eq "internal-https" }.app.where{ $_.name -eq "PowerPoint" }.action.where{ $_.name -eq "presentservice" -and $_.ext -eq "pptx" }.urlsrc
+            External = $r.'wopi-discovery'.'net-zone'.where{ $_.name -eq "external-https" }.app.where{ $_.name -eq "PowerPoint" }.action.where{ $_.name -eq "presentservice" -and $_.ext -eq "pptx" }.urlsrc           
         }
     }
 }
-
-
