@@ -33,9 +33,11 @@ function Test-OOSFarm {
         Write-Warning "Could not connect to $ComputerName"
     }
     if ($r) {
-        New-Object -TypeName psobject -Property @{
-            Internal = $r.'wopi-discovery'.'net-zone'.where{ $_.name -eq "internal-https" }.app.where{ $_.name -eq "PowerPoint" }.action.where{ $_.name -eq "presentservice" -and $_.ext -eq "pptx" }.urlsrc
-            External = $r.'wopi-discovery'.'net-zone'.where{ $_.name -eq "external-https" }.app.where{ $_.name -eq "PowerPoint" }.action.where{ $_.name -eq "presentservice" -and $_.ext -eq "pptx" }.urlsrc           
-        }
+        New-Object -TypeName psobject -Property ([ordered]@{
+            InternalURL = [system.uri]$r.'wopi-discovery'.'net-zone'.where{ $_.name -eq "internal-https" }.app.where{ $_.name -eq "PowerPoint" }.action.where{ $_.name -eq "presentservice" -and $_.ext -eq "pptx" }.urlsrc
+            ExternalURL = [system.uri]$r.'wopi-discovery'.'net-zone'.where{ $_.name -eq "external-https" }.app.where{ $_.name -eq "PowerPoint" }.action.where{ $_.name -eq "presentservice" -and $_.ext -eq "pptx" }.urlsrc
+            InternalBootstrapper = ([system.uri]@($r.'wopi-discovery'.'net-zone'.where{ $_.name -eq "internal-https" }.app.where{$_.bootstrapperUrl}.bootstrapperUrl)[0]).DnsSafeHost
+            ExternalBootstrapper = ([system.uri]@($r.'wopi-discovery'.'net-zone'.where{ $_.name -eq "external-https" }.app.where{$_.bootstrapperUrl}.bootstrapperUrl)[0]).DnsSafeHost
+        })
     }
 }
