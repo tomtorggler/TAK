@@ -1,5 +1,24 @@
 #region Helpers
 
+function Get-AutoDiscoverDns {
+    param($Domain)
+    process {
+        foreach ($d in $domain) {
+            try {
+                Resolve-DnsName -Name "autodiscover.$d" -ErrorAction stop
+            
+            } catch {
+                Write-Warning "No record found for: $_"
+            }
+            try {
+                Resolve-DnsName -Name "_autodiscover._tcp.$d" -Type SRV -ErrorAction stop | Where-Object {$_.Type -eq "SRV" -and $_.Port -eq 443}
+            }
+            catch {
+                Write-Warning "No record found for: $_"
+            }
+        }
+    }
+}
 function New-ExchangeAutodiscoverReport {
     [CmdletBinding()]
     param (
