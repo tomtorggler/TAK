@@ -20,12 +20,18 @@ function Connect-Exchange
         [switch]
         $Online,
         
+        # Specify the Protection switch to connect to Exchange Online / Office 365 Security and Compliance
+        [Parameter(ParameterSetName="Protection")]
+        [switch]
+        $Protection,
+
         # ProxyAccessType to use for the PsSession
         [Parameter()]
         [System.Management.Automation.Remoting.ProxyAccessType]
         $ProxyType = "None"
     )
-    if ((Get-PSSession).ConfigurationName -ne "Microsoft.Exchange" -and $Credential) {
+    $ExistingSessions = Get-PSSession
+    if ($ExistingSessions.ConfigurationName -ne "Microsoft.Exchange" -and $Credential) {
         $params = @{
             ConfigurationName = "Microsoft.Exchange";
             Name = "ExchMgmt";
@@ -33,20 +39,23 @@ function Connect-Exchange
             Credential = $Credential;
             ConnectionUri = "http://$Server/PowerShell/"
         }
-    } elseif ((Get-PSSession).ConfigurationName -ne "Microsoft.Exchange" -and (-not $Credential)) {
+    } elseif ($ExistingSessions.ConfigurationName -ne "Microsoft.Exchange" -and (-not $Credential)) {
         $params = @{
             ConfigurationName = "Microsoft.Exchange";
             Name = "ExOnPrem";
             Authentication = "Kerberos";
             ConnectionUri = "http://$Server/PowerShell/"
         }
-    } else {
-        Write-Warning "Already connected to Exchange"
-        break
+    } elseif ($ExistingSessions.ConfigurationName -eq "Microsoft.Exchange" -and $ExistingSessions.State -eq "Opened") {
+        Write-Verbose "Already connected to Exchange"
+    #   break
     }
     $ExchOption = New-PSSessionOption -ProxyAccessType $ProxyType
     try {
-        if($online -and (Get-Command -Name New-ExoPSSession -ErrorAction SilentlyContinue)) {
+        if($Protection -and (Get-Command -Name New-ExoPSSession -ErrorAction SilentlyContinue)) {
+            Write-Verbose "Connecting using Modern Auth"
+            $sExch = New-ExoPSSession -PSSessionOption $ExchOption -ErrorAction Stop -ErrorVariable ExchangeSessionError -ConnectionURI "https://ps.compliance.protection.outlook.com/PowerShell-LiveId" -AzureADAuthorizationEndpointUri "https://login.windows.net/common"
+        } elseif ($online -and (Get-Command -Name New-ExoPSSession -ErrorAction SilentlyContinue)) {
             Write-Verbose "Connecting using Modern Auth"
             $sExch = New-ExoPSSession -PSSessionOption $ExchOption -ErrorAction Stop -ErrorVariable ExchangeSessionError
         } elseif ($Online) {

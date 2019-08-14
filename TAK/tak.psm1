@@ -769,14 +769,21 @@ function Show-WlanProfile {
     }
 }
 
-
-
 function Get-WlanProfile {
     # quick hack to get all known wlan profiles
     $x = Invoke-Expression "netsh wlan show profile"
     $x = $x | Select-String -Pattern "All User Pr"
     $y = $x -replace("All User Profile     :","Name=") | ConvertFrom-StringData
     $y | Select-Object -ExpandProperty Values
+}
+
+function Get-AzureAdTenantGuid {
+    param(
+        $Url
+    )
+    
+    (Invoke-RestMethod "https://login.windows.net/$url.onmicrosoft.com/.well-known/openid-configuration").token_endpoint.Split('/')[3]
+    
 }
 
 #endregion Tools
