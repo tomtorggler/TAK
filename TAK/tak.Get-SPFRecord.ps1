@@ -41,7 +41,10 @@ function Get-SPFRecord {
         
         # Specify the Domain name for the query.
         [string]
-        $Server
+        $Server,
+
+        [switch]
+        $Recurse
     )
     process {
         $params = @{
@@ -53,7 +56,7 @@ function Get-SPFRecord {
         try {
             $dns = Resolve-DnsName @params | Where-Object Strings -Match "spf1"
             $result = $dns | Select-Object @{Name = "DomainName"; Expression = { $_.Name } }, @{Name = "Record"; Expression = { $_.Strings } }
-            if ($result.record -match "include:") {
+            if ($result.record -match "include:" -and $Recurse) {
                 $include = Get-IncludedSpf($result.record)
                 $include.where{$_.tag -eq "include"}.Value | ForEach-Object {
                     Write-Verbose "Found include: tag, looking up $_" 
