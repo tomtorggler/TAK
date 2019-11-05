@@ -1,24 +1,35 @@
 #region Helpers
 
 function Get-AutoDiscoverDns {
-    param($Domain)
+    param(
+        [Parameter(ValueFromPipelineByPropertyName)]    
+        $DomainName
+    )
     process {
-        foreach ($d in $domain) {
-            try {
-                Resolve-DnsName -Name "autodiscover.$d" -ErrorAction stop
+        foreach ($d in $DomainName) {
             
-            } catch {
-                Write-Warning "No record found for: $_"
+            $A = Resolve-DnsName -Name "autodiscover.$d" -ErrorAction SilentlyContinue -Type A | Where-Object {$_ -isnot [Microsoft.DnsClient.Commands.DnsRecord_SOA]}
+            $SRV = Resolve-DnsName -Name "_autodiscover._tcp.$d" -Type SRV -ErrorAction SilentlyContinue | Where-Object {$_.Type -eq "SRV" -and $_.Port -eq 443}
+
+            $out = [ordered]@{
+                Domain = $d
+                IPAddress = $a.IpAddress
+                Type = $null
+                SRV = $SRV.NameTarget
             }
-            try {
-                Resolve-DnsName -Name "_autodiscover._tcp.$d" -Type SRV -ErrorAction stop | Where-Object {$_.Type -eq "SRV" -and $_.Port -eq 443}
+    
+            if($a.count -gt 1){
+                $out.Type = $a[0].Type
+            } else {
+                $out.Type = $a.Type
             }
-            catch {
-                Write-Warning "No record found for: $_"
-            }
+
+            New-Object -TypeName psobject -Property $out
         }
     }
 }
+
+
 function New-ExchangeAutodiscoverReport {
     [CmdletBinding()]
     param (
