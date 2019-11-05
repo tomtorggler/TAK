@@ -22,7 +22,10 @@ function Get-MxRecord {
         # Specify the DNS server to query.
         $Domain,
         [System.Net.IPAddress]
-        $Server
+        $Server,
+
+        [switch]
+        $ResolvePTR
     )
     begin {
         $param = @{
@@ -45,7 +48,9 @@ function Get-MxRecord {
                 Name = "PTR"
                 Expression = {
                     $_.IpAddress | ForEach-Object {
-                        Resolve-DnsName -Name $_ -Type PTR @param | Select-Object -ExpandProperty NameHost    
+                        if($ResolvePTR){
+                            Resolve-DnsName -Name $_ -Type PTR @param | Select-Object -ExpandProperty NameHost    
+                        }
                     }
                 }
             }

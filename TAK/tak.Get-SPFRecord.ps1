@@ -63,7 +63,10 @@ function Get-SPFRecord {
                     Get-SPFRecord $_
                 }
             }
-            $result
+            New-Object -TypeName psobject -Property ([ordered]@{
+                DomainName = $DomainName
+                Record = $result.record
+            })
         }
         catch {
             Write-Warning $_

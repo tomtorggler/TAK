@@ -38,7 +38,10 @@ function Get-DKIMRecord {
             }
             if($Server) { $params.Add("Server",$Server) }
             $dnsTxt = Resolve-DnsName @params -Type TXT | Where-Object Type -eq TXT  
-            $dnsTxt | Select-Object @{Name = "DKIM"; Expression = {"$DomainName`:$s"}},@{Name = "Record"; Expression = {$_.Strings}}    
+            New-Object -TypeName psobject -Property ([ordered]@{
+                DomainName = "$DomainName`:$s"
+                Record = $dnsTxt.Strings
+            })    
         }
     }    
 }

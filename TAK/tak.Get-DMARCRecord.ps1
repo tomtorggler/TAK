@@ -30,6 +30,10 @@ function Get-DMARCRecord {
         }
         if($Server) { $params.Add("Server",$Server) }
         $dnsTxt = Resolve-DnsName @params -Type  TXT | Where-Object Type -eq TXT  
-        $dnsTxt | Select-Object @{Name = "DMARC"; Expression = {"$DomainName`:$s"}},@{Name = "Record"; Expression = {$_.Strings}}    
+        #$dnsTxt | Select-Object @{Name = "DMARC"; Expression = {"$DomainName`:$s"}},@{Name = "Record"; Expression = {$_.Strings}}    
+        New-Object -TypeName psobject -Property ([ordered]@{
+            DomainName = $DomainName
+            Record = $dnsTxt.Strings
+        }) 
     }    
 }
