@@ -18,7 +18,8 @@ function Import-DhcpServerLog {
     param (
         $Path = "C:\Windows\System32\dhcp",
         $Filter = "DhcpSrvLog*.log",
-        $ComputerName
+        $ComputerName,
+        [switch]$Latest
     )   
     process {
         if($ComputerName){
@@ -27,6 +28,9 @@ function Import-DhcpServerLog {
         $csvHeader = @('ID','Date','Time','Description','IP Address','Host Name','MAC Address','User Name','TransactionID','QResult','Probationtime','CorrelationID','Dhcid','VendorClass(Hex)','VendorClass(ASCII)','UserClass(Hex)','UserClass(ASCII)','RelayAgentInformation','DnsRegError')
         Write-Verbose "Looking for files in $Path"
         $Logs = Get-ChildItem -Path (Join-Path -Path $Path -ChildPath $Filter) -ErrorAction SilentlyContinue
+        if($Latest) {
+            $logs = $Logs | Sort-Object LastWriteTime | Select-Object -Last 1
+        }
         $Logs | Select-String -Pattern "\d{2}," | Select-Object -ExpandProperty Line | ConvertFrom-Csv -Header $csvHeader
     }
 }
