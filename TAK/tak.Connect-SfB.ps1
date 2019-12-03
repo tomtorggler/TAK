@@ -26,11 +26,6 @@ function Connect-SfB {
                    Position=0)]
         $Server,
 
-        # Specify the Online switch to connect to SfB Online using the SkypeOnlineConnector module
-        [Parameter(ParameterSetName="Online")]
-        [switch]
-        $Online,
-
         # Specify the admin doamin to connect to (OverrideAdminDomain parameter)
         [Parameter(ParameterSetName="Online")]
         [string]
@@ -75,7 +70,7 @@ function Connect-SfB {
     }
     $LyncOption = New-PSSessionOption -IdleTimeout (New-TimeSpan -Seconds $Timeout).TotalMilliseconds -ProxyAccessType $ProxyType
     try {
-        if($Online -and (Get-Command -Name New-CsOnlineSession -ErrorAction SilentlyContinue)) {
+        if($AdminDomain -and (Get-Command -Name New-CsOnlineSession -ErrorAction SilentlyContinue)) {
             if($AdminDomain -notmatch ".onmicrosoft.com") {
                 $AdminDomain = -join($AdminDomain,".onmicrosoft.com")
             }
