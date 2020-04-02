@@ -17,13 +17,15 @@ function Get-MxRecord {
     param (
         # Specify the Domain name for the query.
         [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+        [Alias("DomainName")]
         [string]
+        $Domain,
 
         # Specify the DNS server to query.
-        $Domain,
         [System.Net.IPAddress]
         $Server,
 
+        # Also resolve PTR
         [switch]
         $ResolvePTR
     )
@@ -38,7 +40,7 @@ function Get-MxRecord {
     process {
         $mx = Resolve-DnsName -Name $domain -Type MX -ErrorAction SilentlyContinue | Where-Object Type -eq "MX"
         if ($mx) {
-            $rec = $mx | Select-Object -Property NameExchange,Priority,@{
+            $rec = $mx | Select-Object -Property NameExchange,Preference,@{
                     Name = "IPAddress" 
                     Expression = {
                         Resolve-DnsName -Name $_.NameExchange -Type A_AAAA @param | Select-Object -ExpandProperty IPAddress    

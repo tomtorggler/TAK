@@ -119,10 +119,18 @@ function Get-AutodiscoverResponse {
     }
 }   
 
-function Get-AutodiscoverSRV([string]$domainName) {
-    $dns = Resolve-DnsName -Name "_autodiscover._tcp.$domainName" -Type SRV -ErrorAction SilentlyContinue | Where-Object {$_.Type -eq "SRV" -and $_.Port -eq 443}
-    if($dns) {
-        "https://$($dns.NameTarget)/autodiscover/autodiscover.xml"
+function Get-AutodiscoverSRV {
+    [cmdletbinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName)]
+        [string]
+        $DomainName
+    )
+    process{
+        $dns = Resolve-DnsName -Name "_autodiscover._tcp.$domainName" -Type SRV -ErrorAction SilentlyContinue | Where-Object {$_.Type -eq "SRV" -and $_.Port -eq 443}
+        if($dns) {
+            "https://$($dns.NameTarget)/autodiscover/autodiscover.xml"
+        }
     }
 }
 #endregion Helpers
