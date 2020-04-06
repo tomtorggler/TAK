@@ -23,7 +23,7 @@ function Get-DKIMRecord {
         # Specify a selector name to use in the query.
         [Parameter()]
         [string[]]
-        $Selector = "selector1",
+        $Selector = @("selector1","selector2"),
         
         # Specify a DNS server to query.
         [Parameter()]
@@ -36,12 +36,21 @@ function Get-DKIMRecord {
                 Name = "$s._domainkey.$DomainName"
                 ErrorAction = "SilentlyContinue"
             }
-            if($Server) { $params.Add("Server",$Server) }
-            $dnsTxt = Resolve-DnsName @params -Type TXT | Where-Object Type -eq TXT  
-            New-Object -TypeName psobject -Property ([ordered]@{
-                DomainName = "$DomainName`:$s"
-                Record = $dnsTxt.Strings
-            })    
+            if($Server) { 
+                $params.Add("Server",$Server) 
+            }
+            # first get the target of the alias 
+            $dnsTarget = Resolve-DnsName @params -Type CNAME | Where-Object Type -eq CNAME
+            if($dnsTarget){
+                $params.Name = $dnsTarget.NameHost
+                $dnsTxt = Resolve-DnsName @params -Type TXT | Where-Object Type -eq TXT  
+                New-Object -TypeName psobject -Property ([ordered]@{
+                    DomainName = "$DomainName`:$s"
+                    Record = $dnsTxt.Strings
+                })
+            } else {
+                Write-Warning "Could not find CName."
+            }    
         }
     }    
 }
