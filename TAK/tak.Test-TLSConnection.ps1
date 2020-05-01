@@ -32,12 +32,21 @@ function Test-TLSConnection {
     [OutputType([psobject], [bool])]
     param (
         # Specifies the DNS name of the computer to test
-        [Parameter(Mandatory = $true,
-            ValueFromPipeline = $true,
+        [Parameter(Mandatory,
+            ValueFromPipeline,
+            ParameterSetName = "ComputerName",
             Position = 0)]
         [ValidateNotNullOrEmpty()]
         [Alias("Server", "Name", "HostName")]
         $ComputerName,
+
+        [Parameter(Mandatory,
+            ValueFromPipelineByPropertyName,
+            ParameterSetName = "Uri")]
+        [ValidateNotNullOrEmpty()]
+        [Alias("ExternalUrl")]
+        [System.Uri]
+        $Uri,
 
         # Specifies the IP Address of the computer to test. Can be useful if no DNS record exists.
         [Parameter()]
@@ -62,7 +71,7 @@ function Test-TLSConnection {
         # Specifies a path to a file (.cer) where the certificate should be saved if the SaveCert switch parameter is used
         [Parameter(Position = 3)]
         [System.IO.FileInfo]
-        $FilePath = "$computername.cer",
+        $FilePath = "temp.cer",
 
         # Check revocation information for remote certificate. Default is true.
         [Parameter()]
@@ -86,11 +95,16 @@ function Test-TLSConnection {
     }
 
     process {
+        if($uri){
+            # if uri parameter is used, set computername to uri host
+            [string]$ComputerName = $uri.host            
+        }
         if (-not($IPAddress)) {
             # if no IP is specified, use the ComputerName
-            [string]$IPAddress = $ComputerName
+            [string]$IPAddress = $ComputerName            
+            
         }
-
+        Write-Verbose "Testing [$IPAddress]"
         try {
             $TCPConnection = New-Object System.Net.Sockets.Tcpclient($($IPAddress.ToString()), $Port)
             Write-Verbose "TCP connection has succeeded"

@@ -133,10 +133,16 @@ function Get-AutodiscoverSRV {
         }
     }
 }
+
+function Get-AutoDiscoverMetadata {
+    param($DomainName)
+    $uri = "https://{0}/autodiscover/metadata/json/1" -f $DomainName
+    Invoke-RestMethod -Uri $uri
+}
+
 #endregion Helpers
 
 #region Exchange
-
 function Test-ExchangeAutodiscover {
     <#
     .SYNOPSIS
