@@ -6,6 +6,8 @@ function Connect-SfB {
         This function uses New-PSSession or New-CsOnlineSession to connect to Skype for Business (or Lync) Servers
         or Skype for Business Online. The resulting PS Session is then imported and makes cmdlets available in the current session.
         The Timeout and ProxyType parameters are used to configure the PSSessionOption with respective values.
+
+        This function requires the MicrosoftTeams Module: https://www.powershellgallery.com/packages/MicrosoftTeams/1.1.6
     .EXAMPLE
         PS C:\> Connect-SfB -Online -AdminDomain uclab
         This example connects to Skype for Business Online setting the OverrideAdminDomain to uclab.onmicrosoft.com
@@ -20,10 +22,9 @@ function Connect-SfB {
     Param
     (
         # Specifies the ServerName that the session will be connected to
-        [Parameter(Mandatory=$true,
+        [Parameter(Mandatory,
                    ParameterSetName = "Server",
-                   ValueFromPipelineByPropertyName=$true,
-                   Position=0)]
+                   ValueFromPipelineByPropertyName)]
         $Server,
 
         # Specify the admin doamin to connect to (OverrideAdminDomain parameter)
@@ -32,8 +33,7 @@ function Connect-SfB {
         $AdminDomain,
 
         # Credential used for connection; if not specified, the currently logged on user will be used
-        [Parameter(Position=0,
-            ParameterSetName="Server")]
+        [Parameter(ParameterSetName="Server")]
         [pscredential]
         $Credential,
 
