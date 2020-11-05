@@ -39,6 +39,7 @@ function Get-DKIMRecord {
             if($Server) { 
                 $params.Add("Server",$Server) 
             }
+            Write-Verbose "Looking up $($Params.Name)" 
             # first get the target of the alias 
             $dnsTarget = Resolve-DnsName @params -Type CNAME | Where-Object Type -eq CNAME
             if($dnsTarget){

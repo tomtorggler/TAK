@@ -40,7 +40,7 @@ function Get-MxRecord {
     process {
         $mx = Resolve-DnsName -Name $domain -Type MX -ErrorAction SilentlyContinue | Where-Object Type -eq "MX"
         if ($mx) {
-            $rec = $mx | Select-Object -Property NameExchange,Preference,@{
+            $rec = $mx | Select-Object -Property Name,NameExchange,Preference,@{
                     Name = "IPAddress" 
                     Expression = {
                         Resolve-DnsName -Name $_.NameExchange -Type A_AAAA @param | Select-Object -ExpandProperty IPAddress    

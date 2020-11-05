@@ -18,6 +18,7 @@ function Get-IncludedSpf($string) {
         }
     }
 }
+
 function Get-SPFRecord {
     <#
     .Synopsis
@@ -56,11 +57,16 @@ function Get-SPFRecord {
         try {
             $dns = Resolve-DnsName @params | Where-Object Strings -Match "spf1"
             $result = $dns | Select-Object @{Name = "DomainName"; Expression = { $_.Name } }, @{Name = "Record"; Expression = { $_.Strings } }
+            # handle redirect
+            if ($result.record -match "redirect=(.*)" -and $Recurse) {
+                Get-SPFRecord $Matches[1] -Recurse
+            }
+            # handle include
             if ($result.record -match "include:" -and $Recurse) {
                 $include = Get-IncludedSpf($result.record)
                 $include.where{$_.tag -eq "include"}.Value | ForEach-Object {
                     Write-Verbose "Found include: tag, looking up $_" 
-                    Get-SPFRecord $_
+                    Get-SPFRecord $_ -Recurse
                 }
             }
             New-Object -TypeName psobject -Property ([ordered]@{
