@@ -53,6 +53,9 @@ function Import-IISLog {
         [int]
         $Tail = -1,
         [Parameter()]
+        [int]
+        $Count = 1,
+        [Parameter()]
         [switch]
         $Wait
     )   
@@ -60,7 +63,7 @@ function Import-IISLog {
         if($Line){
             [IISLogEntry]::new($line)
         } else {
-            $Logs = Get-ChildItem -Path (Join-Path -Path $Path -ChildPath $Filter) -ErrorAction SilentlyContinue | Select-Object -Last 1
+            $Logs = Get-ChildItem -Path (Join-Path -Path $Path -ChildPath $Filter) -ErrorAction SilentlyContinue | Select-Object -Last $Count
             Write-Information "FileName is $($Logs.fullname)" -InformationAction Continue
             $Logs | Get-Content -Tail $Tail -Wait:$wait.IsPresent | ForEach-Object {
                 if($_ -notmatch "^#") {[IISLogEntry]::new($_)}
