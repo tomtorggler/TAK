@@ -11,7 +11,7 @@ function Get-DKIMRecord {
 
         This example gets DKIM records for all domains returned by Get-AcceptedDomain.
     #>
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/Get-DKIMRecord/')]
+    [CmdletBinding(HelpUri = 'https://onprem.wtf/PowerShell/TAK/Get-DKIMRecord/')]
     param (
         # Specify the Domain name to use in the query.
         [Parameter(Mandatory=$true,

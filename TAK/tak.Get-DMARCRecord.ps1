@@ -10,7 +10,7 @@ function Get-DMARCRecord {
 
         This example gets DMARC records for all domains returned by Get-AcceptedDomain.
     #>
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/Get-DMACRecord/')]
+    [CmdletBinding(HelpUri = 'https://onprem.wtf/PowerShell/TAK/Get-DMACRecord/')]
     param (
         # Specify the Domain name to use for the query.
         [Parameter(Mandatory=$true,

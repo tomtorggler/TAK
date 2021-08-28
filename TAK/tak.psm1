@@ -20,7 +20,7 @@ function Test-TCPConnection {
        Test-TcpConnection -ComputerName www.ntsystems.it -Port 25 -Count 4
        This example tests for 4 times if port 25 can be reached on www.ntsystems.it
     #>
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/test-tcpconnection/')]
+    [CmdletBinding(HelpUri = 'https://onprem.wtf/PowerShell/TAK/test-tcpconnection/')]
     [Alias('ttcp')]
     [OutputType([bool])]
     param (
@@ -75,7 +75,7 @@ function Test-SfBDNS {
        This example queries DNS records for the domain uclab.eu
     #>
 
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/Test-SfBDNS/')]
+    [CmdletBinding(HelpUri = 'https://onprem.wtf/PowerShell/TAK/Test-SfBDNS/')]
 
     param(
         # Specifies the DNS domain name to test
@@ -193,7 +193,7 @@ function Test-SfBDiscover {
        This example gets Lyncdiscover information over http for the domain uclab.eu
     #>
 
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/Test-SfBDiscover/')]
+    [CmdletBinding(HelpUri = 'https://onprem.wtf/PowerShell/TAK/Test-SfBDiscover/')]
     param(
         # Specifies a DNS domain name to test
         [Parameter(Mandatory=$true)]
@@ -265,7 +265,7 @@ function Show-EtcHosts {
        This funtion gets the content of the hosts file, parses the lines and outputs
        a custom object with HostName and IPAddress properties.
     #>
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/Show-EtcHosts/')]
+    [CmdletBinding(HelpUri = 'https://onprem.wtf/PowerShell/TAK/Show-EtcHosts/')]
     param()
     # Alias/OutputType don't seem to work on Core?
     #[Alias('shosts')]
@@ -302,7 +302,7 @@ function Show-EtcHosts {
 function Edit-EtcHosts {
     <#
     .Synopsis
-       Edit \etc\hosts file with notepad.
+       Edit /etc/hosts file with notepad.
     .DESCRIPTION
        This funtion starts notepad.exe as administrator and opens the hosts file for editing.
        If this function is running on PowerShell Core, it runs "sudo vi /etc/hosts"
@@ -335,7 +335,7 @@ function Add-EtcHostsEntry {
     #>
 
     [CmdletBinding(
-        HelpUri = 'https://ntsystems.it/PowerShell/TAK/add-etchostsentry/',
+        HelpUri = 'https://onprem.wtf/PowerShell/TAK/add-etchostsentry/',
         SupportsShouldProcess=$true,
         ConfirmImpact='Medium')]
     Param
@@ -378,7 +378,7 @@ function Add-EtcHostsEntry {
 function Remove-EtcHostsEntry {
     <#
     .Synopsis
-       Remove an entry from local hosts file by it's IP address.
+       Remove an entry from local hosts file by its IP address.
     .DESCRIPTION
        Find an IP address and remove all lines where it appears from the \etc\hosts file of the local computer.
     .EXAMPLE
@@ -439,7 +439,7 @@ function Get-MacAddressVendor {
        This example looks up the vendor of all currently assigned address leases on a DHCP Server.
     #>
     [CmdletBinding(
-        HelpUri = 'https://ntsystems.it/PowerShell/TAK/get-macaddressvendor/',
+        HelpUri = 'https://onprem.wtf/PowerShell/TAK/get-macaddressvendor/',
         PositionalBinding=$true)]
     [OutputType([psobject])]
     Param
@@ -508,7 +508,7 @@ function ConvertTo-Base64
 {
     <#
     .Synopsis
-       Convert a String to Base64
+       Convert a String to Base64.
     .DESCRIPTION
        This Function uses [System.Convert] to convert a ClearText String to Base64.
        The Encoding parameter can be used to specify which encoding to use.
@@ -544,7 +544,7 @@ function ConvertFrom-Base64
 {
     <#
     .Synopsis
-       Convert Base64 to ClearText String
+       Convert Base64 to ClearText String.
     .DESCRIPTION
        This Function uses [System.Convert] to convert Base64 encoded String to ClearText.
        The Encoding parameter can be used to specify which encoding to use.
@@ -618,7 +618,7 @@ function ConvertFrom-SID {
 function ConvertTo-SID {
     <#
     .Synopsis
-       Get the SID for an account name
+       Get the SID for an account name.
     .DESCRIPTION
        Use [System.Security.Principal.SecurityIdentifier].Translate() to get the SID for a samAccountName
     .INPUTS
@@ -668,7 +668,7 @@ function Update-FileWriteTime {
        This example creates myfile if it does not exist in the current directory.
        If the file does exist, the LastWriteTime property will be updated.
     #>
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/update-filewritetime/')]
+    [CmdletBinding(HelpUri = 'https://onprem.wtf/PowerShell/TAK/update-filewritetime/')]
     [Alias('touch')]
     Param
     (
@@ -709,7 +709,7 @@ function Get-TakHash {
 
        This example gets the SHA256 hash of "Hello World!".
     #>
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/get-takhash/')]
+    [CmdletBinding(HelpUri = 'https://onprem.wtf/PowerShell/TAK/get-takhash/')]
     param (
         [Parameter(Mandatory=$true,
             Position=0,

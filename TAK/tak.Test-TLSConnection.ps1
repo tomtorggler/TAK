@@ -27,7 +27,7 @@ function Test-TLSConnection {
 
         This example tests connection to the hostnames passed by pipeline input. It uses the -Quiet parameter and therefore only returns true/flase.
     #>
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/Test-TLSConnection/')]
+    [CmdletBinding(HelpUri = 'https://onprem.wtf/PowerShell/TAK/Test-TLSConnection/')]
     [Alias('ttls')]
     [OutputType([psobject], [bool])]
     param (

@@ -16,6 +16,7 @@ function Get-AutoDiscoverDns {
                 IPAddress = $a.IpAddress
                 Type = $null
                 SRV = $SRV.NameTarget
+                CName = $a.NameHost
             }
     
             if($a.count -gt 1){
@@ -155,11 +156,11 @@ function Test-ExchangeAutodiscover {
         PS C:\> Test-ExchangeAutodiscover thomas@ntsystems.it -Credential (Get-Credential)
         
         This example tests the Autodiscover service for the given mailbox. It will query dns for autodiscover.ntsystems.it and _autodiscover._tcp.ntsystems.it. 
-        It will then try to retrieve an Autodiscover payload from https://ntsystems.it, https://autodiscover.ntsystems.it and the Office 365 endpoint.
+        It will then try to retrieve an Autodiscover payload from https://onprem.wtf, https://autodiscover.ntsystems.it and the Office 365 endpoint.
     .OUTPUTS
         [psobject]
     #>    
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/test-exchangeautodiscover/')]
+    [CmdletBinding(HelpUri = 'https://onprem.wtf/PowerShell/TAK/test-exchangeautodiscover/')]
     param (
         [string]
         $EmailAddress,
@@ -221,7 +222,7 @@ function Test-FederationService {
     Test-FederationService -ComputerName fs.uclab.eu 
     This example gets federation service xml information over the server fs.uclab.eu
     #>
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/Test-FederationService/')]
+    [CmdletBinding(HelpUri = 'https://onprem.wtf/PowerShell/TAK/Test-FederationService/')]
     param(
         # Specifies the name of the federation server 
         [Parameter(Mandatory=$true)]
@@ -295,7 +296,7 @@ function New-SPFRecord {
     .NOTES
         Author: @torggler
     #>
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/New-SPFRecord/')]
+    [CmdletBinding(HelpUri = 'https://onprem.wtf/PowerShell/TAK/New-SPFRecord/')]
     param (
         [Parameter(ValueFromPipelineByPropertyName=$true,
             ValueFromPipeline=$true)]

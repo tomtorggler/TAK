@@ -31,7 +31,7 @@ function Get-SPFRecord {
 
     This example gets SPF records for all domains returned by Get-AcceptedDomain.
     #>
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/Get-SPFRecord/')]
+    [CmdletBinding(HelpUri = 'https://onprem.wtf/PowerShell/TAK/Get-SPFRecord/')]
     param (
         # Specify the Domain name for the query.
         [Parameter(Mandatory = $true,

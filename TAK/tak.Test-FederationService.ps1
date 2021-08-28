@@ -2,14 +2,14 @@
 function Test-FederationService {
     <#
     .Synopsis
-    Test the ADFS web service
+    Test the ADFS web service.
     .DESCRIPTION
     This function uses Invoke-RestMethod to test if the federation service metadata can be retrieved from a given server.
     .EXAMPLE
     Test-FederationService -ComputerName fs.uclab.eu 
     This example gets federation service xml information over the server fs.uclab.eu
     #>
-    [CmdletBinding(HelpUri = 'https://ntsystems.it/PowerShell/TAK/Test-FederationService/')]
+    [CmdletBinding(HelpUri = 'https://onprem.wtf/PowerShell/Test-FederationService/')]
     param(
         # Specifies the name of the federation server 
         [Parameter(Mandatory=$true)]
