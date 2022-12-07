@@ -651,6 +651,31 @@ function ConvertTo-SID {
         $SID | Select-Object -ExpandProperty Value
     }
 }
+
+function ConvertFrom-UnixTime {
+    [CmdletBinding()]
+    param (
+        [Parameter(ValueFromPipeline)]    
+        $UnixTime
+    )
+    process {
+        [System.DateTimeOffset]::FromUnixTimeSeconds($UnixTime).DateTime
+    }
+}
+
+function ConvertTo-UrlString {
+    [CmdletBinding()]
+    Param(
+        # One or more Strings to be converted
+        [Parameter(Mandatory,ValueFromPipeline)]
+        [String]$String
+    )
+    process{
+        [System.Web.HttpUtility]::UrlEncode($string)
+    }
+}
+
+
 #endregion Converters
 
 #region Tools
